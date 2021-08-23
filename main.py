@@ -7,6 +7,17 @@ running = False
 paused = False
 wrapAroundFlag = True
 regenerated = False
+
+const_pattern_random10 = "Random 10%"
+const_pattern_random20 = "Random 20%"
+const_pattern_random30 = "Random 30%"
+const_pattern_glider = "Glider"
+const_pattern_gospers = "Gosper's Glider Gun"
+const_pattern_acorn = "Acorn"
+const_pattern_static_etc = "Statics, oscillators and spaceships"
+const_pattern_diehard = "Die Hard"
+
+startingPatternList = [const_pattern_random10, const_pattern_random20, const_pattern_random30, const_pattern_glider, const_pattern_gospers, const_pattern_acorn, const_pattern_static_etc, const_pattern_diehard]
 selectedPatternName = ""
 selectedPatternIndex = 0
 
@@ -21,6 +32,7 @@ display_living = []
 class GameOfLifeApplication(ttk.Frame):
 
     def __init__(self, windowparent=None):
+        global startingPatternList
         global selectedPatternName
         global selectedPatternIndex
 
@@ -41,10 +53,9 @@ class GameOfLifeApplication(ttk.Frame):
         self.buttonQuit = ttk.Button(self, text='Quit', command=self.end_it, width=16)
         self.buttonPause = ttk.Button(self, text='Pause', state="disabled", command=self.pause, width=16)
 
-        self.startingPatternList = ["Random 10%", "Random 20%", "Random 30%", "Glider"]
-        self.patternChooser = ttk.Combobox(self, values=self.startingPatternList, width=16, state='readonly')
-        self.patternChooser.set(self.startingPatternList[selectedPatternIndex])
-        selectedPatternName = self.startingPatternList[selectedPatternIndex]
+        self.patternChooser = ttk.Combobox(self, values=startingPatternList, width=16, state='readonly')
+        self.patternChooser.set(startingPatternList[selectedPatternIndex])
+        selectedPatternName = startingPatternList[selectedPatternIndex]
 
         self.cellcanvas = tk.Canvas(self, width=constGridSize * constCellSizeGrid,
                                     height=constGridSize * constCellSizeGrid, background='black')
@@ -88,6 +99,8 @@ class GameOfLifeApplication(ttk.Frame):
         global current_cells
         global display_living
         global regenerated
+        global const_pattern_random10, const_pattern_random20, const_pattern_random30, const_pattern_glider, \
+            const_pattern_gospers, const_pattern_acorn, const_pattern_static_etc, const_pattern_diehard
 
         regenerated = True
 
@@ -98,11 +111,11 @@ class GameOfLifeApplication(ttk.Frame):
             for x in range(constGridSize):
                 temp_cells = []
                 for y in range(constGridSize):
-                    if selectedPatternIndex == 0:
+                    if selectedPatternName == const_pattern_random10:
                         rc = random.randint(0, math.floor(100/10))
-                    if selectedPatternIndex == 1:
+                    if selectedPatternName == const_pattern_random20:
                         rc = random.randint(0, math.floor(100/20))
-                    if selectedPatternIndex == 2:
+                    if selectedPatternName == const_pattern_random30:
                         rc = random.randint(0, math.floor(100/30))
                     if rc == 1:
                         temp_cells.append(1)
@@ -117,23 +130,101 @@ class GameOfLifeApplication(ttk.Frame):
                     temp_cells.append(0)
                 current_cells.append(temp_cells)
 
-            if selectedPatternIndex == 3:
+            if selectedPatternName == const_pattern_glider:
                 self.setup_glider()
+            elif selectedPatternName == const_pattern_gospers:
+                self.setup_glider_gun()
+            elif selectedPatternName == const_pattern_acorn:
+                self.setup_acorn()
+            elif selectedPatternName == const_pattern_static_etc:
+                self.setup_static_and_oscillator()
+            elif selectedPatternName == const_pattern_diehard:
+                self.setup_diehard()
+            else:
+                print("UNKNOWN PATTERN REQUESTED!!!!", selectedPatternIndex)
 
     def setup_glider(self):
         offX, offY = math.floor(constGridSize/2), math.floor(constGridSize/2)
-        self.setup_cells(offX + 0, offY + 0)
-        self.setup_cells(offX + 1, offY + 0)
-        self.setup_cells(offX + 2, offY + 0)
-        self.setup_cells(offX + 2, offY + 1)
-        self.setup_cells(offX + 1, offY + 2)
+        self.setup_cells(offX, offY, [0, 0], [1, 0], [2, 0], [2, 1], [1, 2])
 
-    def setup_cells(self, x, y):
+    def setup_glider_gun(self):
+        offX, offY = 10, 10
+        self.setup_cells(offX, offY, [0, 4], [1, 4], [0, 5], [1, 5], [10, 4], [10, 5], [10, 6], [11, 3], [11, 7],
+                         [12, 2], [13, 2], [12, 8], [13, 8], [14, 5], [15, 3], [15, 7], [16, 4], [16, 5], [16, 6],
+                         [17, 5], [20, 2], [20, 3], [20, 4], [21, 2], [21, 3], [21, 4], [22, 1], [22, 5], [24, 0],
+                         [24, 1], [24, 5], [24, 6], [34, 2], [34, 3], [35, 2], [35, 3])
+
+    def setup_acorn(self):
+        offX, offY = math.floor(constGridSize/2), math.floor(constGridSize/2)
+        self.setup_cells(offX, offY, [0, 2], [1, 0], [1, 2], [3, 1], [4, 2], [5, 2], [6, 2])
+
+    def setup_static_and_oscillator(self):
+        row1 = 10
+        row2 = row1 + 20
+        row3 = row2 + 20
+        row4 = row3 + 10
+        row5 = row4 + 10
+        # Block
+        offX, offY = 10, row1
+        self.setup_cells(offX, offY, [0, 0], [1, 0], [1, 1], [0, 1])
+        # Beehive
+        offX, offY = 20, row1
+        self.setup_cells(offX, offY, [0, 1], [1, 0], [1, 2], [2, 0], [2, 2], [3, 1])
+        # Loaf
+        offX, offY = 30, row1
+        self.setup_cells(offX, offY, [0, 1], [1, 0], [2, 0], [3, 1], [3, 2], [2, 3], [1, 2])
+        # Boat
+        offX, offY = 40, row1
+        self.setup_cells(offX, offY, [0, 0], [1, 0], [2, 1], [1, 2], [0, 1])
+        # Snake (? only just found it. Might be listed somewhere)
+        offX, offY = 50, row1
+        self.setup_cells(offX, offY, [3, 1], [3, 0], [4, 0], [5, 1], [5, 2], [4, 3], [3, 3], [2, 3], [1, 3], [0, 4],
+                         [0, 5], [1, 6], [2, 6], [2, 5])
+        # Blinker
+        offX, offY = 10, row2
+        self.setup_cells(offX, offY, [1, 0], [2, 0], [3, 0])
+        # Toad
+        offX, offY = 20, row2
+        self.setup_cells(offX, offY, [1, 0], [2, 0], [3, 0], [0, 1], [1, 1], [2, 1])
+        # Beacon
+        offX, offY = 30, row2
+        self.setup_cells(offX, offY, [0, 0], [1, 0], [1, 1], [0, 1], [2, 2], [2, 3], [3, 2], [3, 3])
+        # Pulsar
+        offX, offY = 46, row2 + 6
+        self.setup_cells(offX, offY,
+                         [2, 1], [3, 1], [4, 1], [1, 2], [1, 3], [1, 4], [2, 6], [3, 6], [4, 6], [6, 2], [6, 3], [6, 4],
+                         [-2, 1], [-3, 1], [-4, 1], [-1, 2], [-1, 3], [-1, 4], [-2, 6], [-3, 6], [-4, 6], [-6, 2],
+                         [-6, 3], [-6, 4],
+                         [2, -1], [3, -1], [4, -1], [1, -2], [1, -3], [1, -4], [2, -6], [3, -6], [4, -6], [6, -2],
+                         [6, -3], [6, -4],
+                         [-2, -1], [-3, -1], [-4, -1], [-1, -2], [-1, -3], [-1, -4], [-2, -6], [-3, -6], [-4, -6],
+                         [-6, -2], [-6, -3], [-6, -4])
+        # Pentadecathlon
+        offX, offY = 60, row2
+        self.setup_cells(offX, offY, [1, 0], [1, 1], [0, 2], [2, 2], [1, 3], [1, 4], [1, 5], [1, 6], [0, 7], [2, 7],
+                         [1, 8], [1, 9])
+        # Lightweight spaceship
+        offX, offY = 10, row3
+        self.setup_cells(offX, offY, [0, 1], [0, 3], [1, 0], [2, 0], [3, 0], [4, 0], [4, 1], [4, 2], [3, 3])
+        # Middleweight spaceship
+        offX, offY = 10, row4
+        self.setup_cells(offX, offY, [0, 1], [0, 3], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [5, 1], [5, 2], [4, 3])
+        # Heavyweight spaceship
+        offX, offY = 10, row5
+        self.setup_cells(offX, offY, [0, 1], [0, 3], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [6, 1], [6, 2],
+                         [5, 3])
+
+    def setup_diehard(self):
+        offX, offY = math.floor(constGridSize / 2), math.floor(constGridSize / 2)
+        self.setup_cells(offX, offY, [0, 1], [1, 1], [1, 2], [6, 0], [5, 2], [6, 2], [7, 2])
+
+    def setup_cells(self, offX, offY, *args):
         global current_cells
         global display_living
 
-        current_cells[x][y] = 1
-        display_living.append([x, y])
+        for i in args:
+            current_cells[offX + i[0]][offY + i[1]] = 1
+            display_living.append([offX + i[0], offY + i[1]])
 
     def update(self):
         global current_cells
@@ -284,12 +375,13 @@ class GameOfLifeApplication(ttk.Frame):
             self.timerid = self.after(constTimerInterval, self.redraw)
 
     def pattern_selection(self, event):
+        global startingPatternList
         global selectedPatternName
         global selectedPatternIndex
         global regenerated
 
         selectedPatternName = self.patternChooser.get()
-        selectedPatternIndex = self.startingPatternList.index(selectedPatternName)
+        selectedPatternIndex = startingPatternList.index(selectedPatternName)
         print(selectedPatternName, selectedPatternIndex)
 
         self.setup_grid()
