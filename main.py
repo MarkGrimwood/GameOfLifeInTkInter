@@ -17,14 +17,21 @@ const_pattern_acorn = "Acorn"
 const_pattern_static_etc = "Statics, oscillators and spaceships"
 const_pattern_diehard = "Die Hard"
 
-startingPatternList = [const_pattern_random10, const_pattern_random20, const_pattern_random30, const_pattern_glider, const_pattern_gospers, const_pattern_acorn, const_pattern_static_etc, const_pattern_diehard]
+startingPatternList = [ \
+    const_pattern_random10, \
+    const_pattern_random20, \
+    const_pattern_random30, \
+    const_pattern_gospers, \
+    const_pattern_acorn, \
+    const_pattern_static_etc \
+]
 selectedPatternName = ""
 selectedPatternIndex = 0
 
 constTimerInterval = 10
-constGridSize = 128
+constGridSize = 192
 constCellSize = 4
-constCellSizeGrid = constCellSize + 1
+constCellSizeGrid = constCellSize # + 1
 current_cells = []
 display_living = []
 
@@ -96,8 +103,7 @@ class GameOfLifeApplication(ttk.Frame):
             self.cellcanvas.create_rectangle(x, y, x + constCellSize, y + constCellSize, fill='#77FF77', tag='cell')
 
     def setup_grid(self):
-        global current_cells
-        global display_living
+        global current_cells, display_living
         global regenerated
         global const_pattern_random10, const_pattern_random20, const_pattern_random30, const_pattern_glider, \
             const_pattern_gospers, const_pattern_acorn, const_pattern_static_etc, const_pattern_diehard
@@ -113,10 +119,11 @@ class GameOfLifeApplication(ttk.Frame):
                 for y in range(constGridSize):
                     if selectedPatternName == const_pattern_random10:
                         rc = random.randint(0, math.floor(100/10))
-                    if selectedPatternName == const_pattern_random20:
+                    elif selectedPatternName == const_pattern_random20:
                         rc = random.randint(0, math.floor(100/20))
-                    if selectedPatternName == const_pattern_random30:
+                    elif selectedPatternName == const_pattern_random30:
                         rc = random.randint(0, math.floor(100/30))
+
                     if rc == 1:
                         temp_cells.append(1)
                         display_living.append([x, y])
@@ -124,28 +131,20 @@ class GameOfLifeApplication(ttk.Frame):
                         temp_cells.append(0)
                 current_cells.append(temp_cells)
         else:
+            temp_cells = []
             for x in range(constGridSize):
-                temp_cells = []
-                for y in range(constGridSize):
-                    temp_cells.append(0)
-                current_cells.append(temp_cells)
+                temp_cells.append(0)
+            for y in range(constGridSize):
+                current_cells.append(temp_cells.copy())
 
-            if selectedPatternName == const_pattern_glider:
-                self.setup_glider()
-            elif selectedPatternName == const_pattern_gospers:
+            if selectedPatternName == const_pattern_gospers:
                 self.setup_glider_gun()
             elif selectedPatternName == const_pattern_acorn:
                 self.setup_acorn()
             elif selectedPatternName == const_pattern_static_etc:
                 self.setup_static_and_oscillator()
-            elif selectedPatternName == const_pattern_diehard:
-                self.setup_diehard()
             else:
                 print("UNKNOWN PATTERN REQUESTED!!!!", selectedPatternIndex)
-
-    def setup_glider(self):
-        offX, offY = math.floor(constGridSize/2), math.floor(constGridSize/2)
-        self.setup_cells(offX, offY, [0, 0], [1, 0], [2, 0], [2, 1], [1, 2])
 
     def setup_glider_gun(self):
         offX, offY = 10, 10
@@ -214,10 +213,6 @@ class GameOfLifeApplication(ttk.Frame):
         self.setup_cells(offX, offY, [0, 1], [0, 3], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [6, 1], [6, 2],
                          [5, 3])
 
-    def setup_diehard(self):
-        offX, offY = math.floor(constGridSize / 2), math.floor(constGridSize / 2)
-        self.setup_cells(offX, offY, [0, 1], [1, 1], [1, 2], [6, 0], [5, 2], [6, 2], [7, 2])
-
     def setup_cells(self, offX, offY, *args):
         global current_cells
         global display_living
@@ -227,9 +222,8 @@ class GameOfLifeApplication(ttk.Frame):
             display_living.append([offX + i[0], offY + i[1]])
 
     def update(self):
-        global current_cells
+        global current_cells, display_living
         global constGridSize
-        global display_living
         global running
         global wrapAroundFlag
 
@@ -238,8 +232,11 @@ class GameOfLifeApplication(ttk.Frame):
             next_cells = []
             display_living = []
 
-            if wrapAroundFlag:
-                pass
+            temp_cells = []
+            for x in range(constGridSize):
+                temp_cells.append(0)
+            for y in range(constGridSize):
+                next_cells.append(temp_cells.copy())
 
             for x in range(constGridSize):
                 next_cell_row = []
@@ -318,19 +315,13 @@ class GameOfLifeApplication(ttk.Frame):
                     if current_cells[x][y] == 0:
                         if count == 3:
                             # An empty cell with exactly three neighbours comes to life
-                            next_cell_row.append(1)
+                            next_cells[x][y] = 1
                             display_living.append([x, y])
-                        else:
-                            next_cell_row.append(0)
                     else:
                         if count == 2 or count == 3:
                             # A living cell with two or three neighbours stays alive
-                            next_cell_row.append(1)
+                            next_cells[x][y] = 1
                             display_living.append([x, y])
-                        else:
-                            # A living cell with too many or too few neighbours dies
-                            next_cell_row.append(0)
-                next_cells.append(next_cell_row)
             current_cells = next_cells
 
     def end_it(self):
@@ -419,16 +410,8 @@ def adjusted_position(pos):
     return new_pos
 
 
-def print_hierarchy(w, depth=0):
-    print('  ' * depth + w.winfo_class() + ' w=' + str(w.winfo_width()) + ' h=' + str(w.winfo_height()) + ' x=' + str(
-        w.winfo_x()) + ' y=' + str(w.winfo_y()))
-    for i in w.winfo_children():
-        print_hierarchy(i, depth + 1)
-
-
 rootWindow = tk.Tk()
 rootWindow.title("Game of Life")
 
 app = GameOfLifeApplication(rootWindow)
-# print_hierarchy(rootWindow)
 app.mainloop()
