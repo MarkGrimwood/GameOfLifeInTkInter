@@ -4,4 +4,6 @@ I first heard of John Conway's Game of Life in the first programming book I boug
 
 I'm now using Life to learn Python with TkInter. If you've not seen Life before there's plenty of information on Wikipedia https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life
 
-My implementation currently has a grid of 192x192 cells, which can be increased if you don't mind it slowing down, and allows a choice of three randomised starting positions; 10%, 20% or 30%, or a small selection of predefined pattens. The intention is to add some more, and add a drawing facility probably with a load/save own pattern option. At some point I'll see about speeding it up too as Python isn't the fastest of languages, and there is a bottleneck in drawing the grid too
+My implementation currently has a grid of 192x192 cells, which can be increased if you don't mind it slowing down, and allows a choice of three randomised starting positions; 10%, 20% or 30%, or a small selection of predefined pattens. The intention is to add some more, and add a drawing facility probably with a load/save own pattern option. 
+
+I'm doing my best to speed it up at the moment by concentrating only on those areas that are changing as Python isn't the fastest of languages, and there is a bottleneck in drawing the grid too
