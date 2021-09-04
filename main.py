@@ -11,11 +11,9 @@ regenerated = False
 const_pattern_random10 = "Random 10%"
 const_pattern_random20 = "Random 20%"
 const_pattern_random30 = "Random 30%"
-const_pattern_glider = "Glider"
 const_pattern_gospers = "Gosper's Glider Gun"
 const_pattern_acorn = "Acorn"
 const_pattern_static_etc = "Statics, oscillators and spaceships"
-const_pattern_diehard = "Die Hard"
 
 startingPatternList = [ \
     const_pattern_random10, \
@@ -40,66 +38,10 @@ change_set = []
 new_change_set = []
 
 
-class changingArea():
-    minX, minY = 0, 0
-    maxX, maxY = 0, 0
-
-    def __init__(self, xlow, ylow, xhigh = -999, yhigh = -999):
-        if xhigh == -999 and yhigh == -999:
-            self.minX = xlow - 1
-            self.maxX = xlow + 1
-            self.minY = ylow - 1
-            self.maxY = ylow + 1
-            # print(f"ADDING CELL: {xlow}, {ylow} as X: {self.minX} to {self.maxX} and Y: {self.minY} to {self.maxY}, length of new_change_set is {len(new_change_set)}")
-        else:
-            self.minX = xlow
-            self.minY = ylow
-            self.maxX = xhigh
-            self.maxY = yhigh
-            # print(f"ADDING AREA: x{xlow}, y{ylow} to x{xhigh}, y{yhigh} as X: {self.minX} to {self.maxX} and Y: {self.minY} to {self.maxY}, length of new_change_set is {len(new_change_set)}")
-
-    def check_it(self, xtest, ytest):
-        global new_change_set
-
-        # First check if the coordinates are within the stored area
-        if self.minX <= xtest <= self.maxX and self.minY <= ytest <= self.maxY:
-            # It's within, so next check is if either of them are on an edge. If so then the edge is expanded
-            if xtest == self.minX:
-                self.minX = xtest - 1
-            if xtest == self.maxX:
-                self.maxX = xtest + 1
-            if ytest == self.minY:
-                self.minY = ytest - 1
-            if ytest == self.maxY:
-                self.maxY = ytest + 1
-            # print(f"FOUND: {xtest} is in X: {self.minX} to {self.maxX}, and {ytest} is in Y: {self.minY} to {self.maxY}")
-            return True
-        else:
-            # print(f"Failing: {thisX} is not in X: {self.minX} to {self.maxX}, and {thisY} is not in Y: {self.minY} to {self.maxY}")
-            return False
-
-    def check_overlap(self, otherArea):
-        # Copy to more obvious named variables
-        xlow = otherArea.minX
-        xhigh = otherArea.maxX
-        ylow = otherArea.minY
-        yhigh = otherArea.maxY
-        # Check all the corners
-        if (self.minX <= xlow <= self.maxX and self.minY <= ylow <= self.maxY) or \
-            (self.minX <= xlow <= self.maxX and self.minY <= yhigh <= self.maxY) or \
-            (self.minX <= xhigh <= self.maxX and self.minY <= yhigh <= self.maxY) or \
-            (self.minX <= xhigh <= self.maxX and self.minY <= ylow <= self.maxY):
-            return True
-        else:
-            return False
-
-
 class GameOfLifeApplication(ttk.Frame):
 
     def __init__(self, windowparent=None):
-        global startingPatternList
-        global selectedPatternName
-        global selectedPatternIndex
+        global startingPatternList, selectedPatternName, selectedPatternIndex
 
         self.lifeFrame = ttk.Frame.__init__(self, windowparent, padding=(12, 3, 12, 3))
         self.master.columnconfigure(0, weight=1)
@@ -142,7 +84,6 @@ class GameOfLifeApplication(ttk.Frame):
 
         self.patternChooser.bind('<<ComboboxSelected>>', func=self.pattern_selection, add='')
 
-        setup_grid()
         self.display_grid()
 
     def redraw(self):
@@ -246,20 +187,22 @@ class GameOfLifeApplication(ttk.Frame):
 def setup_grid():
     global current_cells, display_living, new_change_set
     global regenerated
-    global const_pattern_random10, const_pattern_random20, const_pattern_random30, const_pattern_glider, \
-        const_pattern_gospers, const_pattern_acorn, const_pattern_static_etc, const_pattern_diehard
+    global const_pattern_random10, const_pattern_random20, const_pattern_random30, \
+        const_pattern_gospers, const_pattern_acorn, const_pattern_static_etc
 
     regenerated = True
+
+    print(f"Setting up grid number {selectedPatternIndex} named {selectedPatternName}")
 
     # Set up the grid here
     current_cells = []
     display_living = []
-    print("Clearing change list as part of setup")
     new_change_set = []
     if selectedPatternIndex <= 2:
         for x in range(constGridSize):
             temp_cells = []
             for y in range(constGridSize):
+                rc = 0
                 if selectedPatternName == const_pattern_random10:
                     rc = random.randint(0, math.floor(100/10))
                 elif selectedPatternName == const_pattern_random20:
@@ -270,7 +213,6 @@ def setup_grid():
                 if rc == 1:
                     temp_cells.append(1)
                     display_living.append([x, y])
-                    set_changing_area(x, y)
                 else:
                     temp_cells.append(0)
             current_cells.append(temp_cells)
@@ -368,51 +310,6 @@ def setup_cells(offX, offY, *args):
     for i in args:
         current_cells[offX + i[0]][offY + i[1]] = 1
         display_living.append([offX + i[0], offY + i[1]])
-        set_changing_area(offX + i[0], offY + i[1])
-
-
-def set_changing_area(xtest, ytest):
-    global new_change_set
-
-    isinset = False
-    for i in new_change_set:
-        isinset = i.check_it(xtest, ytest)
-        if isinset:
-            break
-    if not isinset:
-        new_change_set.append(changingArea(xtest, ytest))
-
-        # Check to see if there are two or more areas, and if so are there any overlaps?
-        completed = False
-        while not completed:
-            if len(new_change_set) < 2:
-                completed = True
-            else:
-                completed = True
-                for i in range(len(new_change_set) - 1):
-                    for j in range(i + 1, len(new_change_set)):
-                        if new_change_set[i].check_overlap(new_change_set[j]):
-                            completed = False
-
-                            x1low = new_change_set[i].minX
-                            x1high = new_change_set[i].maxX
-                            y1low = new_change_set[i].minY
-                            y1high = new_change_set[i].maxY
-
-                            x2low = new_change_set[j].minX
-                            x2high = new_change_set[j].maxX
-                            y2low = new_change_set[j].minY
-                            y2high = new_change_set[j].maxY
-
-                            xnewlow = min(x1low, x2low)
-                            xnewhigh = max(x1high, x2high)
-                            ynewlow = min(y1low, y2low)
-                            ynewhigh = max(y1high, y2high)
-
-                            del new_change_set[j]
-                            del new_change_set[i]
-                            new_change_set.append(changingArea(xnewlow, ynewlow, xnewhigh, ynewhigh))
-                            break
 
 
 def update():
@@ -430,7 +327,6 @@ def update():
         new_change_set = []
 
         for x in range(constGridSize):
-            next_cell_row = []
             xm1 = adjusted_position(x - 1)
             xp1 = adjusted_position(x + 1)
 
@@ -508,14 +404,12 @@ def update():
                         # An empty cell with exactly three neighbours comes to life
                         display_living.append([x, y])
                         update_births.append([x, y])
-                        set_changing_area(x, y)
                 else:
                     if count == 2 or count == 3:
                         # A living cell with two or three neighbours stays alive
                         display_living.append([x, y])
                     else:
                         update_deaths.append([x, y])
-                        set_changing_area(x, y)
 
         for i in update_births:
             current_cells[i[0]][i[1]] = 1
@@ -532,6 +426,10 @@ def adjusted_position(pos):
         new_pos = 0
     return new_pos
 
+
+# --- The starting code ---
+selectedPatternName = startingPatternList[selectedPatternIndex]
+setup_grid()
 
 rootWindow = tk.Tk()
 rootWindow.title("Game of Life")
