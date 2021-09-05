@@ -23,8 +23,8 @@ startingPatternList = [ \
     const_pattern_acorn, \
     const_pattern_static_etc \
 ]
-selectedPatternName = ""
 selectedPatternIndex = 0
+selectedPatternName = startingPatternList[selectedPatternIndex]
 
 constTimerInterval = 10
 constGridSize = 192
@@ -34,8 +34,6 @@ current_cells = []
 display_living = []
 update_births = []
 update_deaths = []
-change_set = []
-new_change_set = []
 
 
 class GameOfLifeApplication(ttk.Frame):
@@ -92,20 +90,14 @@ class GameOfLifeApplication(ttk.Frame):
         self.timerid = self.after(constTimerInterval, self.redraw)
 
     def display_grid(self):
-        global display_living, new_change_set
+        global display_living
 
         # Display the current grid here
         self.cellcanvas.delete('cell')
-        for i in new_change_set:
-            xl = i.minX * constCellSizeGrid
-            xh = i.maxX * constCellSizeGrid + constCellSize
-            yl = i.minY * constCellSizeGrid
-            yh = i.maxY * constCellSizeGrid + constCellSize
-            self.cellcanvas.create_rectangle(xl, yl, xh, yh, fill='#770000', tag='cell')
         for i in display_living:
-            x = i[0] * constCellSizeGrid
-            y = i[1] * constCellSizeGrid
-            self.cellcanvas.create_rectangle(x, y, x + constCellSize, y + constCellSize, fill='#77FF77', tag='cell')
+            pos_column = i[0] * constCellSizeGrid
+            pos_row = i[1] * constCellSizeGrid
+            self.cellcanvas.create_rectangle(pos_column, pos_row, pos_column + constCellSize, pos_row + constCellSize, fill='#7777FF', tag='cell')
 
     def end_it(self):
         try:
@@ -185,7 +177,7 @@ class GameOfLifeApplication(ttk.Frame):
 
 
 def setup_grid():
-    global current_cells, display_living, new_change_set
+    global current_cells, display_living
     global regenerated
     global const_pattern_random10, const_pattern_random20, const_pattern_random30, \
         const_pattern_gospers, const_pattern_acorn, const_pattern_static_etc
@@ -197,11 +189,10 @@ def setup_grid():
     # Set up the grid here
     current_cells = []
     display_living = []
-    new_change_set = []
     if selectedPatternIndex <= 2:
-        for x in range(constGridSize):
+        for column in range(constGridSize):
             temp_cells = []
-            for y in range(constGridSize):
+            for row in range(constGridSize):
                 rc = 0
                 if selectedPatternName == const_pattern_random10:
                     rc = random.randint(0, math.floor(100/10))
@@ -212,15 +203,15 @@ def setup_grid():
 
                 if rc == 1:
                     temp_cells.append(1)
-                    display_living.append([x, y])
+                    display_living.append([column, row])
                 else:
                     temp_cells.append(0)
             current_cells.append(temp_cells)
     else:
         temp_cells = []
-        for x in range(constGridSize):
+        for column in range(constGridSize):
             temp_cells.append(0)
-        for y in range(constGridSize):
+        for row in range(constGridSize):
             current_cells.append(temp_cells.copy())
 
         if selectedPatternName == const_pattern_gospers:
@@ -234,16 +225,16 @@ def setup_grid():
 
 
 def setup_glider_gun():
-    offX, offY = 10, 10
-    setup_cells(offX, offY, [0, 4], [1, 4], [0, 5], [1, 5], [10, 4], [10, 5], [10, 6], [11, 3], [11, 7],
+    offset_column, offset_row = 10, 10
+    setup_cells(offset_column, offset_row, [0, 4], [1, 4], [0, 5], [1, 5], [10, 4], [10, 5], [10, 6], [11, 3], [11, 7],
                      [12, 2], [13, 2], [12, 8], [13, 8], [14, 5], [15, 3], [15, 7], [16, 4], [16, 5], [16, 6],
                      [17, 5], [20, 2], [20, 3], [20, 4], [21, 2], [21, 3], [21, 4], [22, 1], [22, 5], [24, 0],
                      [24, 1], [24, 5], [24, 6], [34, 2], [34, 3], [35, 2], [35, 3])
 
 
 def setup_acorn():
-    offX, offY = math.floor(constGridSize/2), math.floor(constGridSize/2)
-    setup_cells(offX, offY, [0, 2], [1, 0], [1, 2], [3, 1], [4, 2], [5, 2], [6, 2])
+    offset_column, offset_row = math.floor(constGridSize/2), math.floor(constGridSize/2)
+    setup_cells(offset_column, offset_row, [0, 2], [1, 0], [1, 2], [3, 1], [4, 2], [5, 2], [6, 2])
 
 
 def setup_static_and_oscillator():
@@ -253,33 +244,33 @@ def setup_static_and_oscillator():
     row4 = row3 + 10
     row5 = row4 + 10
     # Block
-    offX, offY = 10, row1
-    setup_cells(offX, offY, [0, 0], [1, 0], [1, 1], [0, 1])
+    offset_column, offset_row = 10, row1
+    setup_cells(offset_column, offset_row, [0, 0], [1, 0], [1, 1], [0, 1])
     # Beehive
-    offX, offY = 20, row1
-    setup_cells(offX, offY, [0, 1], [1, 0], [1, 2], [2, 0], [2, 2], [3, 1])
+    offset_column, offset_row = 20, row1
+    setup_cells(offset_column, offset_row, [0, 1], [1, 0], [1, 2], [2, 0], [2, 2], [3, 1])
     # Loaf
-    offX, offY = 30, row1
-    setup_cells(offX, offY, [0, 1], [1, 0], [2, 0], [3, 1], [3, 2], [2, 3], [1, 2])
+    offset_column, offset_row = 30, row1
+    setup_cells(offset_column, offset_row, [0, 1], [1, 0], [2, 0], [3, 1], [3, 2], [2, 3], [1, 2])
     # Boat
-    offX, offY = 40, row1
-    setup_cells(offX, offY, [0, 0], [1, 0], [2, 1], [1, 2], [0, 1])
+    offset_column, offset_row = 40, row1
+    setup_cells(offset_column, offset_row, [0, 0], [1, 0], [2, 1], [1, 2], [0, 1])
     # Snake (? only just found it. Might be listed somewhere)
-    offX, offY = 50, row1
-    setup_cells(offX, offY, [3, 1], [3, 0], [4, 0], [5, 1], [5, 2], [4, 3], [3, 3], [2, 3], [1, 3], [0, 4],
+    offset_column, offset_row = 50, row1
+    setup_cells(offset_column, offset_row, [3, 1], [3, 0], [4, 0], [5, 1], [5, 2], [4, 3], [3, 3], [2, 3], [1, 3], [0, 4],
                      [0, 5], [1, 6], [2, 6], [2, 5])
     # Blinker
-    offX, offY = 10, row2
-    setup_cells(offX, offY, [1, 0], [2, 0], [3, 0])
+    offset_column, offset_row = 10, row2
+    setup_cells(offset_column, offset_row, [1, 0], [2, 0], [3, 0])
     # Toad
-    offX, offY = 20, row2
-    setup_cells(offX, offY, [1, 0], [2, 0], [3, 0], [0, 1], [1, 1], [2, 1])
+    offset_column, offset_row = 20, row2
+    setup_cells(offset_column, offset_row, [1, 0], [2, 0], [3, 0], [0, 1], [1, 1], [2, 1])
     # Beacon
-    offX, offY = 30, row2
-    setup_cells(offX, offY, [0, 0], [1, 0], [1, 1], [0, 1], [2, 2], [2, 3], [3, 2], [3, 3])
+    offset_column, offset_row = 30, row2
+    setup_cells(offset_column, offset_row, [0, 0], [1, 0], [1, 1], [0, 1], [2, 2], [2, 3], [3, 2], [3, 3])
     # Pulsar
-    offX, offY = 46, row2 + 6
-    setup_cells(offX, offY,
+    offset_column, offset_row = 46, row2 + 6
+    setup_cells(offset_column, offset_row,
                      [2, 1], [3, 1], [4, 1], [1, 2], [1, 3], [1, 4], [2, 6], [3, 6], [4, 6], [6, 2], [6, 3], [6, 4],
                      [-2, 1], [-3, 1], [-4, 1], [-1, 2], [-1, 3], [-1, 4], [-2, 6], [-3, 6], [-4, 6], [-6, 2],
                      [-6, 3], [-6, 4],
@@ -288,28 +279,28 @@ def setup_static_and_oscillator():
                      [-2, -1], [-3, -1], [-4, -1], [-1, -2], [-1, -3], [-1, -4], [-2, -6], [-3, -6], [-4, -6],
                      [-6, -2], [-6, -3], [-6, -4])
     # Pentadecathlon
-    offX, offY = 60, row2
-    setup_cells(offX, offY, [1, 0], [1, 1], [0, 2], [2, 2], [1, 3], [1, 4], [1, 5], [1, 6], [0, 7], [2, 7],
+    offset_column, offset_row = 60, row2
+    setup_cells(offset_column, offset_row, [1, 0], [1, 1], [0, 2], [2, 2], [1, 3], [1, 4], [1, 5], [1, 6], [0, 7], [2, 7],
                      [1, 8], [1, 9])
     # Lightweight spaceship
-    offX, offY = 10, row3
-    setup_cells(offX, offY, [0, 1], [0, 3], [1, 0], [2, 0], [3, 0], [4, 0], [4, 1], [4, 2], [3, 3])
+    offset_column, offset_row = 10, row3
+    setup_cells(offset_column, offset_row, [0, 1], [0, 3], [1, 0], [2, 0], [3, 0], [4, 0], [4, 1], [4, 2], [3, 3])
     # Middleweight spaceship
-    offX, offY = 10, row4
-    setup_cells(offX, offY, [0, 1], [0, 3], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [5, 1], [5, 2], [4, 3])
+    offset_column, offset_row = 10, row4
+    setup_cells(offset_column, offset_row, [0, 1], [0, 3], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [5, 1], [5, 2], [4, 3])
     # Heavyweight spaceship
-    offX, offY = 10, row5
-    setup_cells(offX, offY, [0, 1], [0, 3], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [6, 1], [6, 2],
+    offset_column, offset_row = 10, row5
+    setup_cells(offset_column, offset_row, [0, 1], [0, 3], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [6, 1], [6, 2],
                      [5, 3])
 
 
-def setup_cells(offX, offY, *args):
+def setup_cells(offset_column, offset_row, *args):
     global current_cells
     global display_living
 
     for i in args:
-        current_cells[offX + i[0]][offY + i[1]] = 1
-        display_living.append([offX + i[0], offY + i[1]])
+        current_cells[offset_column + i[0]][offset_row + i[1]] = 1
+        display_living.append([offset_column + i[0], offset_row + i[1]])
 
 
 def update():
@@ -317,105 +308,102 @@ def update():
     global constGridSize
     global running
     global wrapAroundFlag
-    global change_set, new_change_set
 
     if running:
         # Update the grid here
         display_living = []
         update_births = []
         update_deaths = []
-        new_change_set = []
 
-        for x in range(constGridSize):
-            xm1 = adjusted_position(x - 1)
-            xp1 = adjusted_position(x + 1)
+        for column in range(constGridSize):
+            column_m1 = adjusted_position(column - 1)
+            column_p1 = adjusted_position(column + 1)
 
-            for y in range(constGridSize):
-                ym1 = adjusted_position(y - 1)
-                yp1 = adjusted_position(y + 1)
+            for row in range(constGridSize):
+                row_m1 = adjusted_position(row - 1)
+                row_p1 = adjusted_position(row + 1)
 
                 # Count number of live cells around the current cell (live = 1, dead = 0)
                 if wrapAroundFlag:
-                    count = current_cells[xm1][ym1] + \
-                            current_cells[x][ym1] + \
-                            current_cells[xp1][ym1] + \
-                            current_cells[xm1][y] + \
-                            current_cells[xp1][y] + \
-                            current_cells[xm1][yp1] + \
-                            current_cells[x][yp1] + \
-                            current_cells[xp1][yp1]
+                    count = current_cells[column_m1][row_m1] + \
+                            current_cells[column][row_m1] + \
+                            current_cells[column_p1][row_m1] + \
+                            current_cells[column_m1][row] + \
+                            current_cells[column_p1][row] + \
+                            current_cells[column_m1][row_p1] + \
+                            current_cells[column][row_p1] + \
+                            current_cells[column_p1][row_p1]
                 else:
-                    if x == 0:
-                        if y == 0:
-                            count = current_cells[xp1][y] + \
-                                    current_cells[x][yp1] + \
-                                    current_cells[xp1][yp1]
-                        elif y >= constGridSize - 1:
-                            count = current_cells[x][ym1] + \
-                                    current_cells[xp1][ym1] + \
-                                    current_cells[xp1][y]
+                    if column == 0:
+                        if row == 0:
+                            count = current_cells[column_p1][row] + \
+                                    current_cells[column][row_p1] + \
+                                    current_cells[column_p1][row_p1]
+                        elif row >= constGridSize - 1:
+                            count = current_cells[column][row_m1] + \
+                                    current_cells[column_p1][row_m1] + \
+                                    current_cells[column_p1][row]
                         else:
-                            count = current_cells[x][ym1] + \
-                                    current_cells[xp1][ym1] + \
-                                    current_cells[xp1][y] + \
-                                    current_cells[x][yp1] + \
-                                    current_cells[xp1][yp1]
-                    elif x >= constGridSize - 1:
-                        if y == 0:
-                            count = current_cells[xm1][y] + \
-                                    current_cells[x][yp1] + \
-                                    current_cells[xm1][yp1]
-                        elif y >= constGridSize - 1:
-                            count = current_cells[x][ym1] + \
-                                    current_cells[xm1][ym1] + \
-                                    current_cells[xm1][y]
+                            count = current_cells[column][row_m1] + \
+                                    current_cells[column_p1][row_m1] + \
+                                    current_cells[column_p1][row] + \
+                                    current_cells[column][row_p1] + \
+                                    current_cells[column_p1][row_p1]
+                    elif column >= constGridSize - 1:
+                        if row == 0:
+                            count = current_cells[column_m1][row] + \
+                                    current_cells[column][row_p1] + \
+                                    current_cells[column_m1][row_p1]
+                        elif row >= constGridSize - 1:
+                            count = current_cells[column][row_m1] + \
+                                    current_cells[column_m1][row_m1] + \
+                                    current_cells[column_m1][row]
                         else:
-                            count = current_cells[x][ym1] + \
-                                    current_cells[xm1][ym1] + \
-                                    current_cells[xm1][y] + \
-                                    current_cells[x][yp1] + \
-                                    current_cells[xm1][yp1]
+                            count = current_cells[column][row_m1] + \
+                                    current_cells[column_m1][row_m1] + \
+                                    current_cells[column_m1][row] + \
+                                    current_cells[column][row_p1] + \
+                                    current_cells[column_m1][row_p1]
                     else:
-                        if y == 0:
-                            count = current_cells[xm1][y] + \
-                                    current_cells[xp1][y] + \
-                                    current_cells[xm1][yp1] + \
-                                    current_cells[x][yp1] + \
-                                    current_cells[xp1][yp1]
-                        elif y >= constGridSize - 1:
-                            count = current_cells[xm1][ym1] + \
-                                    current_cells[x][ym1] + \
-                                    current_cells[xp1][ym1] + \
-                                    current_cells[xm1][y] + \
-                                    current_cells[xp1][y]
+                        if row == 0:
+                            count = current_cells[column_m1][row] + \
+                                    current_cells[column_p1][row] + \
+                                    current_cells[column_m1][row_p1] + \
+                                    current_cells[column][row_p1] + \
+                                    current_cells[column_p1][row_p1]
+                        elif row >= constGridSize - 1:
+                            count = current_cells[column_m1][row_m1] + \
+                                    current_cells[column][row_m1] + \
+                                    current_cells[column_p1][row_m1] + \
+                                    current_cells[column_m1][row] + \
+                                    current_cells[column_p1][row]
                         else:
-                            count = current_cells[xm1][ym1] + \
-                                    current_cells[x][ym1] + \
-                                    current_cells[xp1][ym1] + \
-                                    current_cells[xm1][y] + \
-                                    current_cells[xp1][y] + \
-                                    current_cells[xm1][yp1] + \
-                                    current_cells[x][yp1] + \
-                                    current_cells[xp1][yp1]
+                            count = current_cells[column_m1][row_m1] + \
+                                    current_cells[column][row_m1] + \
+                                    current_cells[column_p1][row_m1] + \
+                                    current_cells[column_m1][row] + \
+                                    current_cells[column_p1][row] + \
+                                    current_cells[column_m1][row_p1] + \
+                                    current_cells[column][row_p1] + \
+                                    current_cells[column_p1][row_p1]
 
                 # Who lives, who dies?
-                if current_cells[x][y] == 0:
+                if current_cells[column][row] == 0:
                     if count == 3:
                         # An empty cell with exactly three neighbours comes to life
-                        display_living.append([x, y])
-                        update_births.append([x, y])
+                        display_living.append([column, row])
+                        update_births.append([column, row])
                 else:
                     if count == 2 or count == 3:
                         # A living cell with two or three neighbours stays alive
-                        display_living.append([x, y])
+                        display_living.append([column, row])
                     else:
-                        update_deaths.append([x, y])
+                        update_deaths.append([column, row])
 
         for i in update_births:
             current_cells[i[0]][i[1]] = 1
         for i in update_deaths:
             current_cells[i[0]][i[1]] = 0
-        change_set = new_change_set
 
 
 def adjusted_position(pos):
@@ -428,7 +416,6 @@ def adjusted_position(pos):
 
 
 # --- The starting code ---
-selectedPatternName = startingPatternList[selectedPatternIndex]
 setup_grid()
 
 rootWindow = tk.Tk()
