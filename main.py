@@ -34,6 +34,8 @@ current_cells = []
 display_living = []
 update_births = []
 update_deaths = []
+next_recompute_area = []
+current_recompute_area = []
 
 
 class GameOfLifeApplication(ttk.Frame):
@@ -94,10 +96,16 @@ class GameOfLifeApplication(ttk.Frame):
 
         # Display the current grid here
         self.cellcanvas.delete('cell')
-        for i in display_living:
-            pos_column = i[0] * constCellSizeGrid
-            pos_row = i[1] * constCellSizeGrid
-            self.cellcanvas.create_rectangle(pos_column, pos_row, pos_column + constCellSize, pos_row + constCellSize, fill='#7777FF', tag='cell')
+        # for row in next_recompute_area:
+        #     pos_row = row[0] * constCellSizeGrid
+        #     for column in row[1]:
+        #         pos_column = column * constCellSizeGrid
+        #         self.cellcanvas.create_rectangle(pos_column, pos_row, pos_column + constCellSize, pos_row + constCellSize, fill='#773333', tag='cell')
+        for row in display_living:
+            pos_row = row[0] * constCellSizeGrid
+            for column in row[1]:
+                pos_column = column * constCellSizeGrid
+                self.cellcanvas.create_rectangle(pos_column, pos_row, pos_column + constCellSize, pos_row + constCellSize, fill='#7777FF', tag='cell')
 
     def end_it(self):
         try:
@@ -189,9 +197,15 @@ def setup_grid():
     # Set up the grid here
     current_cells = []
     display_living = []
+
+    temp_cells = []
+    for column in range(constGridSize):
+        temp_cells.append(0)
+    for row in range(constGridSize):
+        current_cells.append(temp_cells.copy())
+
     if selectedPatternIndex <= 2:
         for column in range(constGridSize):
-            temp_cells = []
             for row in range(constGridSize):
                 rc = 0
                 if selectedPatternName == const_pattern_random10:
@@ -202,18 +216,8 @@ def setup_grid():
                     rc = random.randint(0, math.floor(100/30))
 
                 if rc == 1:
-                    temp_cells.append(1)
-                    display_living.append([column, row])
-                else:
-                    temp_cells.append(0)
-            current_cells.append(temp_cells)
+                    setup_cells(0, 0, [column, row])
     else:
-        temp_cells = []
-        for column in range(constGridSize):
-            temp_cells.append(0)
-        for row in range(constGridSize):
-            current_cells.append(temp_cells.copy())
-
         if selectedPatternName == const_pattern_gospers:
             setup_glider_gun()
         elif selectedPatternName == const_pattern_acorn:
@@ -296,15 +300,68 @@ def setup_static_and_oscillator():
 
 def setup_cells(offset_column, offset_row, *args):
     global current_cells
+
+    for iter_add in args:
+        column, row = offset_column + iter_add[0], offset_row + iter_add[1]
+        current_cells[column][row] = 1
+        set_living_cells(offset_column, offset_row, *args)
+
+
+def set_living_cells(offset_column, offset_row, *args):
     global display_living
 
-    for i in args:
-        current_cells[offset_column + i[0]][offset_row + i[1]] = 1
-        display_living.append([offset_column + i[0], offset_row + i[1]])
+    for iter_add in args:
+        column, row = offset_column + iter_add[0], offset_row + iter_add[1]
+
+        found = False
+        for iter_living in display_living:
+            if iter_living[0] == row:
+                iter_living[1].append(column)
+                found = True
+                break
+        if not found:
+            display_living.append([row, [column]])
+        set_recompute_areas(column, row)
+
+
+def set_recompute_areas(column, row):
+    column_m1 = adjusted_position(column - 1)
+    column_p1 = adjusted_position(column + 1)
+    row_m1 = adjusted_position(row - 1)
+    row_p1 = adjusted_position(row + 1)
+
+    set_recompute_areas_sub(column_m1, row_m1)
+    set_recompute_areas_sub(column, row_m1)
+    set_recompute_areas_sub(column_p1, row_m1)
+
+    set_recompute_areas_sub(column_m1, row)
+    set_recompute_areas_sub(column, row)
+    set_recompute_areas_sub(column_p1, row)
+
+    set_recompute_areas_sub(column_m1, row_p1)
+    set_recompute_areas_sub(column, row_p1)
+    set_recompute_areas_sub(column_p1, row_p1)
+
+
+def set_recompute_areas_sub(column, row):
+    global next_recompute_area
+
+    found = False
+    for iter_recompute in next_recompute_area:
+        if iter_recompute[0] == row:
+            try:
+                if iter_recompute[1].index(column):
+                    pass
+            except ValueError:
+                iter_recompute[1].append(column)
+            found = True
+            break
+    if not found:
+        next_recompute_area.append([row, [column]])
 
 
 def update():
-    global current_cells, display_living, update_births, update_deaths
+    global current_cells, display_living, update_births, update_deaths, next_recompute_area
     global constGridSize
     global running
     global wrapAroundFlag
@@ -314,14 +371,17 @@ def update():
         display_living = []
         update_births = []
         update_deaths = []
+        current_recompute_area = next_recompute_area
+        next_recompute_area = []
 
-        for column in range(constGridSize):
-            column_m1 = adjusted_position(column - 1)
-            column_p1 = adjusted_position(column + 1)
+        for iter_row in current_recompute_area:
+            row = iter_row[0]
+            row_m1 = adjusted_position(row - 1)
+            row_p1 = adjusted_position(row + 1)
 
-            for row in range(constGridSize):
-                row_m1 = adjusted_position(row - 1)
-                row_p1 = adjusted_position(row + 1)
+            for column in iter_row[1]:
+                column_m1 = adjusted_position(column - 1)
+                column_p1 = adjusted_position(column + 1)
 
                 # Count number of live cells around the current cell (live = 1, dead = 0)
                 if wrapAroundFlag:
@@ -391,12 +451,12 @@ def update():
                 if current_cells[column][row] == 0:
                     if count == 3:
                         # An empty cell with exactly three neighbours comes to life
-                        display_living.append([column, row])
+                        set_living_cells(0, 0, [column, row])
                         update_births.append([column, row])
                 else:
                     if count == 2 or count == 3:
                         # A living cell with two or three neighbours stays alive
-                        display_living.append([column, row])
+                        set_living_cells(0, 0, [column, row])
                     else:
                         update_deaths.append([column, row])
 
