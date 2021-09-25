@@ -27,15 +27,16 @@ selectedPatternIndex = 0
 selectedPatternName = startingPatternList[selectedPatternIndex]
 
 constTimerInterval = 10
-constGridSize = 192
-constCellSize = 4
-constCellSizeGrid = constCellSize # + 1
+constGridSize = 256
+cellSizeGrid = 3
 current_cells = []
 display_living = []
 update_births = []
 update_deaths = []
 next_recompute_area = []
 current_recompute_area = []
+generationNumber = 0
+livingCells = 0
 
 
 class GameOfLifeApplication(ttk.Frame):
@@ -47,72 +48,126 @@ class GameOfLifeApplication(ttk.Frame):
         self.master.columnconfigure(0, weight=1)
         self.master.rowconfigure(0, weight=1)
 
-        self.runningText = tk.StringVar()
-        self.runningText.set("Start")
-        self.buttonStartStop = ttk.Button(self, textvariable=self.runningText, command=self.start_stop, width=16)
+        self.define_variables_for_widgets()
+        self.create_buttons()
+        self.create_labels()
+        self.create_canvas()
+        self.create_lists()
 
-        self.wrapButtonValue = tk.IntVar()
-        self.wrapButtonValue.set(1)
-        self.buttonWrapOnOff = ttk.Checkbutton(self, text='Wraparound', command=self.wrap, var=self.wrapButtonValue,
-                                               width=16)
+        self.add_widgets()
 
-        self.mondialLabel = ttk.Label(self, text="Conway's Game Of Life")
-        self.buttonQuit = ttk.Button(self, text='Quit', command=self.end_it, width=16)
-        self.buttonPause = ttk.Button(self, text='Pause', state="disabled", command=self.pause, width=16)
+        self.grid(column=0, row=0, sticky='N, W')
+        for c in range(1, self.grid_size()[0]):
+            self.columnconfigure(c, weight=1)
+        for r in range(1, self.grid_size()[1]):
+            self.rowconfigure(r, weight=1)
 
+        self.update_labels()
+        self.display_grid()
+
+    def create_lists(self):
         self.patternChooser = ttk.Combobox(self, values=startingPatternList, width=16, state='readonly')
         self.patternChooser.set(startingPatternList[selectedPatternIndex])
         selectedPatternName = startingPatternList[selectedPatternIndex]
 
-        self.cellcanvas = tk.Canvas(self, width=constGridSize * constCellSizeGrid,
-                                    height=constGridSize * constCellSizeGrid, background='black')
+    def create_buttons(self):
+        self.buttonStartStop = ttk.Button(self, textvariable=self.runningText, command=self.start_stop, width=16)
+        self.buttonWrapOnOff = ttk.Checkbutton(self, text='Wraparound', command=self.wrap, var=self.wrapButtonValue,
+                                               width=16)
+        self.buttonQuit = ttk.Button(self, text='Quit', command=self.end_it, width=16)
+        self.buttonPause = ttk.Button(self, text='Pause', state="disabled", command=self.pause, width=16)
+        self.buttonZoomIn = ttk.Button(self, text='Zoom In', state="enabled", command=self.zoomin, width=16)
+        self.buttonZoomOut = ttk.Button(self, text='Zoom Out', state="enabled", command=self.zoomout, width=16)
 
-        self.grid(column=0, row=0, sticky='N, W, E, S')
-        for c in range(1, 6):
-            self.columnconfigure(c, weight=1)
-        for r in range(1, 4):
-            self.rowconfigure(r, weight=1)
+    def create_labels(self):
+        self.generationLabel = ttk.Label(self, textvariable=self.generationText)
+        self.livingCellsLabel = ttk.Label(self, textvariable=self.livingCellsText)
 
+        self.mondialLabel = ttk.Label(self, text="Conway's Game Of Life")
+
+    def create_canvas(self):
+        self.cellcanvas = tk.Canvas(self,
+                                    width=500,
+                                    height=500,
+                                    scrollregion=(0, 0, constGridSize * cellSizeGrid, constGridSize * cellSizeGrid),
+                                    background='black')
+
+        self.hbar = ttk.Scrollbar(self.cellcanvas, orient=tk.HORIZONTAL, command=self.cellcanvas.xview)
+        self.vbar = ttk.Scrollbar(self.cellcanvas, orient=tk.VERTICAL, command=self.cellcanvas.yview)
+
+        self.hbar.pack(side=tk.BOTTOM, fill=tk.X)
+        self.vbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.cellcanvas.configure(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set, width=500, height=500)
+
+    def define_variables_for_widgets(self):
+        self.runningText = tk.StringVar()
+        self.runningText.set("Start")
+
+        self.generationText = tk.StringVar()
+
+        self.livingCellsText = tk.StringVar()
+
+        self.wrapButtonValue = tk.IntVar()
+        self.wrapButtonValue.set(1)
+
+    def add_widgets(self):
         # Add everything to the frame
-        self.mondialLabel.grid(column=1, row=1, columnspan=5)
+        self.mondialLabel.grid(column=1, row=1, columnspan=2)
+        self.generationLabel.grid(column=3, row=1, columnspan=1)
+        self.livingCellsLabel.grid(column=4, row=1, columnspan=1)
+
         self.patternChooser.grid(column=1, row=2, columnspan=1)
         self.buttonWrapOnOff.grid(column=2, row=2, columnspan=1)
         self.buttonStartStop.grid(column=3, row=2, columnspan=1)
         self.buttonPause.grid(column=4, row=2, columnspan=1)
         self.buttonQuit.grid(column=5, row=2, columnspan=1)
-        self.cellcanvas.grid(column=1, row=3, columnspan=5)
+        self.buttonZoomIn.grid(column=6, row=2, columnspan=1)
+        self.buttonZoomOut.grid(column=7, row=2, columnspan=1)
+
+        self.cellcanvas.grid(column=1, row=3, columnspan=10, rowspan=10)
 
         self.patternChooser.bind('<<ComboboxSelected>>', func=self.pattern_selection, add='')
 
-        self.display_grid()
-
     def redraw(self):
-        update()
+        global generationNumber, running
+
+        if running:
+            update()
+            generationNumber += 1
+
+        self.update_labels()
         self.display_grid()
         self.timerid = self.after(constTimerInterval, self.redraw)
+
+    def update_labels(self):
+        global livingCells
+
+        self.generationText.set(f"Generation: {generationNumber}")
+        self.livingCellsText.set(f"Cells: {livingCells}")
 
     def display_grid(self):
         global display_living
 
         # Display the current grid here
-        self.cellcanvas.delete('cell')
+        self.cellcanvas.delete(tk.ALL)
+
         # for row in next_recompute_area:
         #     pos_row = row[0] * constCellSizeGrid
         #     for column in row[1]:
         #         pos_column = column * constCellSizeGrid
-        #         self.cellcanvas.create_rectangle(pos_column, pos_row, pos_column + constCellSize, pos_row + constCellSize, fill='#773333', tag='cell')
+        #         self.cellcanvas.create_rectangle(pos_column, pos_row, pos_column + cellSizeGrid, pos_row + cellSizeGrid, fill='#773333', tag='cell')
+
         for row in display_living:
-            pos_row = row[0] * constCellSizeGrid
+            pos_row = row[0] * cellSizeGrid
             for column in row[1]:
-                pos_column = column * constCellSizeGrid
-                self.cellcanvas.create_rectangle(pos_column, pos_row, pos_column + constCellSize, pos_row + constCellSize, fill='#7777FF', tag='cell')
+                pos_column = column * cellSizeGrid
+                self.cellcanvas.create_rectangle(pos_column, pos_row, pos_column + cellSizeGrid, pos_row + cellSizeGrid, fill='#7777FF', tag='cell')
 
     def end_it(self):
         try:
             self.after_cancel(self.timerid)
-            # print("Timerid cleared")
         except AttributeError:
-            # print("No timerid to clear")
             pass
 
         self.destroy()
@@ -124,6 +179,7 @@ class GameOfLifeApplication(ttk.Frame):
         global selectedPatternName
         global selectedPatternIndex
         global regenerated
+        global generationNumber
 
         if running:
             running = False
@@ -136,6 +192,8 @@ class GameOfLifeApplication(ttk.Frame):
             self.patternChooser.configure(state='readonly')
         else:
             running = True
+            generationNumber = 0
+            self.update_labels()
             self.runningText.set("Stop")
             self.buttonPause.configure(state="normal")
             self.buttonWrapOnOff.configure(state="disabled")
@@ -160,6 +218,7 @@ class GameOfLifeApplication(ttk.Frame):
 
         setup_grid()
         self.display_grid()
+        self.update_labels()
         regenerated = True
 
     def pause(self):
@@ -182,6 +241,24 @@ class GameOfLifeApplication(ttk.Frame):
             wrapAroundFlag = True
         else:
             wrapAroundFlag = False
+
+    def zoomin(self):
+        global cellSizeGrid, running
+
+        if cellSizeGrid < 10:
+            cellSizeGrid += 1
+
+        if not running:
+            self.display_grid()
+
+    def zoomout(self):
+        global cellSizeGrid, running
+
+        if cellSizeGrid > 2:
+            cellSizeGrid -= 1
+
+        if not running:
+            self.display_grid()
 
 
 def setup_grid():
@@ -365,105 +442,108 @@ def update():
     global constGridSize
     global running
     global wrapAroundFlag
+    global livingCells
 
-    if running:
-        # Update the grid here
-        display_living = []
-        update_births = []
-        update_deaths = []
-        current_recompute_area = next_recompute_area
-        next_recompute_area = []
+    # Update the grid here
+    display_living = []
+    update_births = []
+    update_deaths = []
+    current_recompute_area = next_recompute_area
+    next_recompute_area = []
+    livingCells = 0
 
-        for iter_row in current_recompute_area:
-            row = iter_row[0]
-            row_m1 = adjusted_position(row - 1)
-            row_p1 = adjusted_position(row + 1)
+    for iter_row in current_recompute_area:
+        row = iter_row[0]
+        row_m1 = adjusted_position(row - 1)
+        row_p1 = adjusted_position(row + 1)
 
-            for column in iter_row[1]:
-                column_m1 = adjusted_position(column - 1)
-                column_p1 = adjusted_position(column + 1)
+        for column in iter_row[1]:
+            column_m1 = adjusted_position(column - 1)
+            column_p1 = adjusted_position(column + 1)
 
-                # Count number of live cells around the current cell (live = 1, dead = 0)
-                if wrapAroundFlag:
-                    count = current_cells[column_m1][row_m1] + \
-                            current_cells[column][row_m1] + \
-                            current_cells[column_p1][row_m1] + \
-                            current_cells[column_m1][row] + \
-                            current_cells[column_p1][row] + \
-                            current_cells[column_m1][row_p1] + \
-                            current_cells[column][row_p1] + \
-                            current_cells[column_p1][row_p1]
-                else:
-                    if column == 0:
-                        if row == 0:
-                            count = current_cells[column_p1][row] + \
-                                    current_cells[column][row_p1] + \
-                                    current_cells[column_p1][row_p1]
-                        elif row >= constGridSize - 1:
-                            count = current_cells[column][row_m1] + \
-                                    current_cells[column_p1][row_m1] + \
-                                    current_cells[column_p1][row]
-                        else:
-                            count = current_cells[column][row_m1] + \
-                                    current_cells[column_p1][row_m1] + \
-                                    current_cells[column_p1][row] + \
-                                    current_cells[column][row_p1] + \
-                                    current_cells[column_p1][row_p1]
-                    elif column >= constGridSize - 1:
-                        if row == 0:
-                            count = current_cells[column_m1][row] + \
-                                    current_cells[column][row_p1] + \
-                                    current_cells[column_m1][row_p1]
-                        elif row >= constGridSize - 1:
-                            count = current_cells[column][row_m1] + \
-                                    current_cells[column_m1][row_m1] + \
-                                    current_cells[column_m1][row]
-                        else:
-                            count = current_cells[column][row_m1] + \
-                                    current_cells[column_m1][row_m1] + \
-                                    current_cells[column_m1][row] + \
-                                    current_cells[column][row_p1] + \
-                                    current_cells[column_m1][row_p1]
+            # Count number of live cells around the current cell (live = 1, dead = 0)
+            if wrapAroundFlag:
+                count = current_cells[column_m1][row_m1] + \
+                        current_cells[column][row_m1] + \
+                        current_cells[column_p1][row_m1] + \
+                        current_cells[column_m1][row] + \
+                        current_cells[column_p1][row] + \
+                        current_cells[column_m1][row_p1] + \
+                        current_cells[column][row_p1] + \
+                        current_cells[column_p1][row_p1]
+            else:
+                if column == 0:
+                    if row == 0:
+                        count = current_cells[column_p1][row] + \
+                                current_cells[column][row_p1] + \
+                                current_cells[column_p1][row_p1]
+                    elif row >= constGridSize - 1:
+                        count = current_cells[column][row_m1] + \
+                                current_cells[column_p1][row_m1] + \
+                                current_cells[column_p1][row]
                     else:
-                        if row == 0:
-                            count = current_cells[column_m1][row] + \
-                                    current_cells[column_p1][row] + \
-                                    current_cells[column_m1][row_p1] + \
-                                    current_cells[column][row_p1] + \
-                                    current_cells[column_p1][row_p1]
-                        elif row >= constGridSize - 1:
-                            count = current_cells[column_m1][row_m1] + \
-                                    current_cells[column][row_m1] + \
-                                    current_cells[column_p1][row_m1] + \
-                                    current_cells[column_m1][row] + \
-                                    current_cells[column_p1][row]
-                        else:
-                            count = current_cells[column_m1][row_m1] + \
-                                    current_cells[column][row_m1] + \
-                                    current_cells[column_p1][row_m1] + \
-                                    current_cells[column_m1][row] + \
-                                    current_cells[column_p1][row] + \
-                                    current_cells[column_m1][row_p1] + \
-                                    current_cells[column][row_p1] + \
-                                    current_cells[column_p1][row_p1]
-
-                # Who lives, who dies?
-                if current_cells[column][row] == 0:
-                    if count == 3:
-                        # An empty cell with exactly three neighbours comes to life
-                        set_living_cells(0, 0, [column, row])
-                        update_births.append([column, row])
-                else:
-                    if count == 2 or count == 3:
-                        # A living cell with two or three neighbours stays alive
-                        set_living_cells(0, 0, [column, row])
+                        count = current_cells[column][row_m1] + \
+                                current_cells[column_p1][row_m1] + \
+                                current_cells[column_p1][row] + \
+                                current_cells[column][row_p1] + \
+                                current_cells[column_p1][row_p1]
+                elif column >= constGridSize - 1:
+                    if row == 0:
+                        count = current_cells[column_m1][row] + \
+                                current_cells[column][row_p1] + \
+                                current_cells[column_m1][row_p1]
+                    elif row >= constGridSize - 1:
+                        count = current_cells[column][row_m1] + \
+                                current_cells[column_m1][row_m1] + \
+                                current_cells[column_m1][row]
                     else:
-                        update_deaths.append([column, row])
+                        count = current_cells[column][row_m1] + \
+                                current_cells[column_m1][row_m1] + \
+                                current_cells[column_m1][row] + \
+                                current_cells[column][row_p1] + \
+                                current_cells[column_m1][row_p1]
+                else:
+                    if row == 0:
+                        count = current_cells[column_m1][row] + \
+                                current_cells[column_p1][row] + \
+                                current_cells[column_m1][row_p1] + \
+                                current_cells[column][row_p1] + \
+                                current_cells[column_p1][row_p1]
+                    elif row >= constGridSize - 1:
+                        count = current_cells[column_m1][row_m1] + \
+                                current_cells[column][row_m1] + \
+                                current_cells[column_p1][row_m1] + \
+                                current_cells[column_m1][row] + \
+                                current_cells[column_p1][row]
+                    else:
+                        count = current_cells[column_m1][row_m1] + \
+                                current_cells[column][row_m1] + \
+                                current_cells[column_p1][row_m1] + \
+                                current_cells[column_m1][row] + \
+                                current_cells[column_p1][row] + \
+                                current_cells[column_m1][row_p1] + \
+                                current_cells[column][row_p1] + \
+                                current_cells[column_p1][row_p1]
 
-        for i in update_births:
-            current_cells[i[0]][i[1]] = 1
-        for i in update_deaths:
-            current_cells[i[0]][i[1]] = 0
+            # Who lives, who dies?
+            if current_cells[column][row] == 0:
+                if count == 3:
+                    # An empty cell with exactly three neighbours comes to life
+                    set_living_cells(0, 0, [column, row])
+                    update_births.append([column, row])
+                    livingCells += 1
+            else:
+                if count == 2 or count == 3:
+                    # A living cell with two or three neighbours stays alive
+                    set_living_cells(0, 0, [column, row])
+                    livingCells += 1
+                else:
+                    update_deaths.append([column, row])
+
+    for i in update_births:
+        current_cells[i[0]][i[1]] = 1
+    for i in update_deaths:
+        current_cells[i[0]][i[1]] = 0
 
 
 def adjusted_position(pos):
