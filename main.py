@@ -37,7 +37,7 @@ next_recompute_area = []
 current_recompute_area = []
 generationNumber = 0
 livingCells = 0
-
+recomputeCount = 0
 
 class GameOfLifeApplication(ttk.Frame):
 
@@ -76,6 +76,7 @@ class GameOfLifeApplication(ttk.Frame):
     def create_labels(self):
         self.generationLabel = ttk.Label(self, textvariable=self.generationText)
         self.livingCellsLabel = ttk.Label(self, textvariable=self.livingCellsText)
+        self.areacountlabel = ttk.Label(self, textvariable=self.areacountText)
 
         self.mondialLabel = ttk.Label(self, text="Conway's Game Of Life")
 
@@ -101,6 +102,8 @@ class GameOfLifeApplication(ttk.Frame):
 
         self.livingCellsText = tk.StringVar()
 
+        self.areacountText = tk.StringVar()
+
         self.wrapButtonValue = tk.IntVar()
         self.wrapButtonValue.set(1)
 
@@ -109,6 +112,7 @@ class GameOfLifeApplication(ttk.Frame):
         self.mondialLabel.grid(column=1, row=1, columnspan=2)
         self.generationLabel.grid(column=3, row=1, columnspan=1)
         self.livingCellsLabel.grid(column=4, row=1, columnspan=1)
+        self.areacountlabel.grid(column=5, row=1, columnspan=1)
 
         self.patternChooser.grid(column=1, row=2, columnspan=1)
         self.buttonWrapOnOff.grid(column=2, row=2, columnspan=1)
@@ -139,10 +143,11 @@ class GameOfLifeApplication(ttk.Frame):
             self.timerid = self.after(constTimerInterval, self.redraw)
 
     def update_labels(self):
-        global livingCells
+        global livingCells, recomputeCount
 
         self.generationText.set(f"Generation: {generationNumber}")
         self.livingCellsText.set(f"Cells: {livingCells}")
+        self.areacountText.set(f"Recompute: {recomputeCount}")
 
     def display_grid(self):
         global display_living
@@ -151,9 +156,9 @@ class GameOfLifeApplication(ttk.Frame):
         self.cellcanvas.delete(tk.ALL)
 
         # for row in next_recompute_area:
-        #     pos_row = row[0] * constCellSizeGrid
+        #     pos_row = row[0] * cellSizeGrid
         #     for column in row[1]:
-        #         pos_column = column * constCellSizeGrid
+        #         pos_column = column * cellSizeGrid
         #         self.cellcanvas.create_rectangle(pos_column, pos_row, pos_column + cellSizeGrid, pos_row + cellSizeGrid, fill='#773333', tag='cell')
 
         for row in display_living:
@@ -425,6 +430,7 @@ def set_recompute_areas(column, row):
 
 def set_recompute_areas_sub(column, row):
     global next_recompute_area
+    global recomputeCount
 
     found = False
     for iter_recompute in next_recompute_area:
@@ -434,10 +440,12 @@ def set_recompute_areas_sub(column, row):
                     pass
             except ValueError:
                 iter_recompute[1].append(column)
+                recomputeCount += 1
             found = True
             break
     if not found:
         next_recompute_area.append([row, [column]])
+        recomputeCount += 1
 
 
 def update():
@@ -447,6 +455,7 @@ def update():
     global wrapAroundFlag
     global livingCells
     global generationNumber
+    global recomputeCount
 
     # Update the grid here
     display_living = []
@@ -454,6 +463,7 @@ def update():
     update_deaths = []
     current_recompute_area = next_recompute_area
     next_recompute_area = []
+    recomputeCount = 0
     livingCells = 0
     generationNumber += 1
 
