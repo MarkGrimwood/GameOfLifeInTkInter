@@ -56,12 +56,6 @@ class GameOfLifeApplication(ttk.Frame):
 
         self.add_widgets()
 
-        self.grid(column=0, row=0, sticky='N, W')
-        for c in range(1, self.grid_size()[0]):
-            self.columnconfigure(c, weight=1)
-        for r in range(1, self.grid_size()[1]):
-            self.rowconfigure(r, weight=1)
-
         self.update_labels()
         self.display_grid()
 
@@ -87,18 +81,17 @@ class GameOfLifeApplication(ttk.Frame):
 
     def create_canvas(self):
         self.cellcanvas = tk.Canvas(self,
-                                    width=500,
-                                    height=500,
+                                    width=500, height=500,
                                     scrollregion=(0, 0, constGridSize * cellSizeGrid, constGridSize * cellSizeGrid),
                                     background='black')
 
-        self.hbar = ttk.Scrollbar(self.cellcanvas, orient=tk.HORIZONTAL, command=self.cellcanvas.xview)
-        self.vbar = ttk.Scrollbar(self.cellcanvas, orient=tk.VERTICAL, command=self.cellcanvas.yview)
+        self.cellcanvashorizontalbar = tk.Scrollbar(self.cellcanvas, orient=tk.HORIZONTAL, command=self.cellcanvas.xview)
+        self.cellcanvasverticalbar = tk.Scrollbar(self.cellcanvas, orient=tk.VERTICAL, command=self.cellcanvas.yview)
 
-        self.hbar.pack(side=tk.BOTTOM, fill=tk.X)
-        self.vbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.cellcanvashorizontalbar.pack(side=tk.BOTTOM, fill=tk.X)
+        self.cellcanvasverticalbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        self.cellcanvas.configure(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set, width=500, height=500)
+        self.cellcanvas.configure(xscrollcommand=self.cellcanvashorizontalbar.set, yscrollcommand=self.cellcanvasverticalbar.set)
 
     def define_variables_for_widgets(self):
         self.runningText = tk.StringVar()
@@ -125,20 +118,25 @@ class GameOfLifeApplication(ttk.Frame):
         self.buttonZoomIn.grid(column=6, row=2, columnspan=1)
         self.buttonZoomOut.grid(column=7, row=2, columnspan=1)
 
-        self.cellcanvas.grid(column=1, row=3, columnspan=10, rowspan=10)
+        self.cellcanvas.grid(column=1, row=3, columnspan=10, rowspan=10, sticky='N,W,E,S')
+
+        self.grid(column=0, row=0, sticky='N,S')
+        for c in range(1, self.grid_size()[0]+1):
+            self.columnconfigure(c, weight=1)
+        for r in range(1, self.grid_size()[1]+1):
+            self.rowconfigure(r, weight=1)
 
         self.patternChooser.bind('<<ComboboxSelected>>', func=self.pattern_selection, add='')
 
     def redraw(self):
-        global generationNumber, running
+        global running
 
-        if running:
-            update()
-            generationNumber += 1
-
-        self.update_labels()
+        update()
         self.display_grid()
-        self.timerid = self.after(constTimerInterval, self.redraw)
+        self.update_labels()
+
+        if running and not paused:
+            self.timerid = self.after(constTimerInterval, self.redraw)
 
     def update_labels(self):
         global livingCells
@@ -196,6 +194,7 @@ class GameOfLifeApplication(ttk.Frame):
             self.update_labels()
             self.runningText.set("Stop")
             self.buttonPause.configure(state="normal")
+            paused = False
             self.buttonWrapOnOff.configure(state="disabled")
             self.patternChooser.configure(state='disabled')
 
@@ -247,18 +246,22 @@ class GameOfLifeApplication(ttk.Frame):
 
         if cellSizeGrid < 10:
             cellSizeGrid += 1
+            # self.cellcanvas.configure(scrollregion=(0, 0, constGridSize * cellSizeGrid, constGridSize * cellSizeGrid))
 
-        if not running:
-            self.display_grid()
+        if not running or paused:
+            # self.redraw()
+            self.cellcanvas.scale(tk.ALL, 0, 0, 2, 2)
 
     def zoomout(self):
         global cellSizeGrid, running
 
         if cellSizeGrid > 2:
             cellSizeGrid -= 1
+            # self.cellcanvas.configure(scrollregion=(0, 0, constGridSize * cellSizeGrid, constGridSize * cellSizeGrid))
 
-        if not running:
-            self.display_grid()
+        if not running or paused:
+            # self.redraw()
+            self.cellcanvas.scale(tk.ALL, 0, 0, 0.5, 0.5)
 
 
 def setup_grid():
@@ -443,6 +446,7 @@ def update():
     global running
     global wrapAroundFlag
     global livingCells
+    global generationNumber
 
     # Update the grid here
     display_living = []
@@ -451,6 +455,7 @@ def update():
     current_recompute_area = next_recompute_area
     next_recompute_area = []
     livingCells = 0
+    generationNumber += 1
 
     for iter_row in current_recompute_area:
         row = iter_row[0]
