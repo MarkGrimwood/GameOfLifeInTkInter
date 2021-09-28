@@ -28,7 +28,7 @@ selectedPatternName = startingPatternList[selectedPatternIndex]
 
 constTimerInterval = 10
 constGridSize = 256
-cellSizeGrid = 3
+cellSizeGrid = 2
 current_cells = []
 display_living = []
 update_births = []
@@ -45,6 +45,7 @@ class GameOfLifeApplication(ttk.Frame):
         global startingPatternList, selectedPatternName, selectedPatternIndex
 
         self.lifeFrame = ttk.Frame.__init__(self, windowparent, padding=(12, 3, 12, 3))
+
         self.master.columnconfigure(0, weight=1)
         self.master.rowconfigure(0, weight=1)
 
@@ -74,15 +75,13 @@ class GameOfLifeApplication(ttk.Frame):
         self.buttonZoomOut = ttk.Button(self, text='Zoom Out', state="enabled", command=self.zoomout, width=16)
 
     def create_labels(self):
-        self.generationLabel = ttk.Label(self, textvariable=self.generationText)
-        self.livingCellsLabel = ttk.Label(self, textvariable=self.livingCellsText)
-        self.areacountlabel = ttk.Label(self, textvariable=self.areacountText)
-
-        self.mondialLabel = ttk.Label(self, text="Conway's Game Of Life")
+        self.infoLabel = ttk.Label(self, textvariable=self.infoText, anchor='w')
 
     def create_canvas(self):
+        global cellSizeGrid
+
         self.cellcanvas = tk.Canvas(self,
-                                    width=500, height=500,
+                                    width=512, height=512,
                                     scrollregion=(0, 0, constGridSize * cellSizeGrid, constGridSize * cellSizeGrid),
                                     background='black')
 
@@ -98,33 +97,26 @@ class GameOfLifeApplication(ttk.Frame):
         self.runningText = tk.StringVar()
         self.runningText.set("Start")
 
-        self.generationText = tk.StringVar()
-
-        self.livingCellsText = tk.StringVar()
-
-        self.areacountText = tk.StringVar()
+        self.infoText = tk.StringVar()
 
         self.wrapButtonValue = tk.IntVar()
         self.wrapButtonValue.set(1)
 
     def add_widgets(self):
         # Add everything to the frame
-        self.mondialLabel.grid(column=1, row=1, columnspan=2)
-        self.generationLabel.grid(column=3, row=1, columnspan=1)
-        self.livingCellsLabel.grid(column=4, row=1, columnspan=1)
-        self.areacountlabel.grid(column=5, row=1, columnspan=1)
+        self.infoLabel.grid(column=1, row=1, columnspan=5)
 
-        self.patternChooser.grid(column=1, row=2, columnspan=1)
-        self.buttonWrapOnOff.grid(column=2, row=2, columnspan=1)
-        self.buttonStartStop.grid(column=3, row=2, columnspan=1)
-        self.buttonPause.grid(column=4, row=2, columnspan=1)
-        self.buttonQuit.grid(column=5, row=2, columnspan=1)
-        self.buttonZoomIn.grid(column=6, row=2, columnspan=1)
-        self.buttonZoomOut.grid(column=7, row=2, columnspan=1)
+        self.patternChooser.grid(column=1, row=2)
+        self.buttonWrapOnOff.grid(column=2, row=2)
+        self.buttonStartStop.grid(column=3, row=2)
+        self.buttonPause.grid(column=4, row=2)
+        self.buttonQuit.grid(column=5, row=2)
+        self.buttonZoomIn.grid(column=6, row=2)
+        self.buttonZoomOut.grid(column=7, row=2)
 
-        self.cellcanvas.grid(column=1, row=3, columnspan=10, rowspan=10, sticky='N,W,E,S')
+        self.cellcanvas.grid(column=1, row=3, sticky='nw')
 
-        self.grid(column=0, row=0, sticky='N,S')
+        self.grid(column=0, row=0, sticky='nw')
         for c in range(1, self.grid_size()[0]+1):
             self.columnconfigure(c, weight=1)
         for r in range(1, self.grid_size()[1]+1):
@@ -147,9 +139,7 @@ class GameOfLifeApplication(ttk.Frame):
     def update_labels(self):
         global livingCells, recomputeCount
 
-        self.generationText.set(f"Generation: {generationNumber}")
-        self.livingCellsText.set(f"Cells: {livingCells}")
-        self.areacountText.set(f"Recompute: {recomputeCount}")
+        self.infoText.set(f"Conway's Game of Life: Generation={generationNumber:>5}, Living cells={livingCells:>5}, Recomputes={recomputeCount:>5}")
 
     def display_grid(self):
         global display_living
@@ -249,26 +239,16 @@ class GameOfLifeApplication(ttk.Frame):
             wrapAroundFlag = False
 
     def zoomin(self):
-        global cellSizeGrid, running
+        global cellSizeGrid
 
         if cellSizeGrid < 10:
-            cellSizeGrid += 1
-            # self.cellcanvas.configure(scrollregion=(0, 0, constGridSize * cellSizeGrid, constGridSize * cellSizeGrid))
-
-        if not running or paused:
-            # self.redraw()
-            self.cellcanvas.scale(tk.ALL, 0, 0, 2, 2)
+            cellSizeGrid *= 2
 
     def zoomout(self):
-        global cellSizeGrid, running
+        global cellSizeGrid
 
         if cellSizeGrid > 2:
-            cellSizeGrid -= 1
-            # self.cellcanvas.configure(scrollregion=(0, 0, constGridSize * cellSizeGrid, constGridSize * cellSizeGrid))
-
-        if not running or paused:
-            # self.redraw()
-            self.cellcanvas.scale(tk.ALL, 0, 0, 0.5, 0.5)
+            cellSizeGrid /= 2
 
 
 def setup_grid():
