@@ -135,7 +135,9 @@ class GameOfLifeApplication(ttk.Frame):
     def redraw(self):
         global running
 
-        update()
+        if running and not paused:
+            update()
+
         self.display_grid()
         self.update_labels()
 
