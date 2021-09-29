@@ -44,43 +44,45 @@ class GameOfLifeApplication(ttk.Frame):
     def __init__(self, windowparent=None):
         global startingPatternList, selectedPatternName, selectedPatternIndex
 
-        self.lifeFrame = ttk.Frame.__init__(self, windowparent, padding=(12, 3, 12, 3))
+        self.lifeFrame = ttk.Frame.__init__(self, windowparent, padding=(12, 3))
+        self.buttonFrame = ttk.Frame(self, relief='ridge', padding=10)
+        self.canvasFrame = ttk.Frame(self, width=520, height=520, relief='ridge', padding=10)
 
         self.master.columnconfigure(0, weight=1)
         self.master.rowconfigure(0, weight=1)
 
         self.define_variables_for_widgets()
-        self.create_buttons()
-        self.create_labels()
-        self.create_canvas()
-        self.create_lists()
+        self.create_buttons(self.buttonFrame)
+        self.create_labels(self.buttonFrame)
+        self.create_canvas(self.canvasFrame)
+        self.create_lists(self.buttonFrame)
 
         self.add_widgets()
 
         self.update_labels()
         self.display_grid()
 
-    def create_lists(self):
-        self.patternChooser = ttk.Combobox(self, values=startingPatternList, width=16, state='readonly')
+    def create_lists(self, frame):
+        self.patternChooser = ttk.Combobox(frame, values=startingPatternList, width=16, state='readonly')
         self.patternChooser.set(startingPatternList[selectedPatternIndex])
         selectedPatternName = startingPatternList[selectedPatternIndex]
 
-    def create_buttons(self):
-        self.buttonStartStop = ttk.Button(self, textvariable=self.runningText, command=self.start_stop, width=16)
-        self.buttonWrapOnOff = ttk.Checkbutton(self, text='Wraparound', command=self.wrap, var=self.wrapButtonValue,
-                                               width=16)
-        self.buttonQuit = ttk.Button(self, text='Quit', command=self.end_it, width=16)
-        self.buttonPause = ttk.Button(self, text='Pause', state="disabled", command=self.pause, width=16)
-        self.buttonZoomIn = ttk.Button(self, text='Zoom In', state="enabled", command=self.zoomin, width=16)
-        self.buttonZoomOut = ttk.Button(self, text='Zoom Out', state="enabled", command=self.zoomout, width=16)
+    def create_buttons(self, frame):
+        self.buttonStartStop = ttk.Button(frame, textvariable=self.runningText, command=self.start_stop)#, width=16)
+        self.buttonStartStop.focus()
+        self.buttonWrapOnOff = ttk.Checkbutton(frame, text='Wraparound', command=self.wrap, var=self.wrapButtonValue)#, width=16)
+        self.buttonQuit = ttk.Button(frame, text='Quit', command=self.end_it)#, width=16)
+        self.buttonPause = ttk.Button(frame, text='Pause', state="disabled", command=self.pause)#, width=16)
+        self.buttonZoomIn = ttk.Button(frame, text='Zoom In', state="enabled", command=self.zoomin)#, width=16)
+        self.buttonZoomOut = ttk.Button(frame, text='Zoom Out', state="enabled", command=self.zoomout)#, width=16)
 
-    def create_labels(self):
-        self.infoLabel = ttk.Label(self, textvariable=self.infoText, anchor='w')
+    def create_labels(self, frame):
+        self.infoLabel = ttk.Label(frame, textvariable=self.infoText, anchor='w')
 
-    def create_canvas(self):
+    def create_canvas(self, frame):
         global cellSizeGrid
 
-        self.cellcanvas = tk.Canvas(self,
+        self.cellcanvas = tk.Canvas(frame,
                                     width=512, height=512,
                                     scrollregion=(0, 0, constGridSize * cellSizeGrid, constGridSize * cellSizeGrid),
                                     background='black')
@@ -104,7 +106,7 @@ class GameOfLifeApplication(ttk.Frame):
 
     def add_widgets(self):
         # Add everything to the frame
-        self.infoLabel.grid(column=1, row=1, columnspan=5)
+        self.infoLabel.grid(column=1, row=1, columnspan=7)
 
         self.patternChooser.grid(column=1, row=2)
         self.buttonWrapOnOff.grid(column=2, row=2)
@@ -114,9 +116,12 @@ class GameOfLifeApplication(ttk.Frame):
         self.buttonZoomIn.grid(column=6, row=2)
         self.buttonZoomOut.grid(column=7, row=2)
 
-        self.cellcanvas.grid(column=1, row=3, sticky='nw')
+        self.cellcanvas.grid(column=1, row=1, sticky='nw')
 
         self.grid(column=0, row=0, sticky='nw')
+        self.buttonFrame.grid(column=1, row=1, sticky='nw')
+        self.canvasFrame.grid(column=1, row=2, sticky='nwse')
+
         for c in range(1, self.grid_size()[0]+1):
             self.columnconfigure(c, weight=1)
         for r in range(1, self.grid_size()[1]+1):
@@ -139,7 +144,7 @@ class GameOfLifeApplication(ttk.Frame):
     def update_labels(self):
         global livingCells, recomputeCount
 
-        self.infoText.set(f"Conway's Game of Life: Generation={generationNumber:>5}, Living cells={livingCells:>5}, Recomputes={recomputeCount:>5}")
+        self.infoText.set(f"Generation={generationNumber:>5}, Living cells={livingCells:>5}, Recomputes={recomputeCount:>5}")
 
     def display_grid(self):
         global display_living
