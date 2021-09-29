@@ -28,7 +28,10 @@ selectedPatternName = startingPatternList[selectedPatternIndex]
 
 constTimerInterval = 10
 constGridSize = 256
-cellSizeGrid = 2
+constCellSizeGridMaximum = 8
+cellSizeGrid = constCellSizeGridMaximum
+constDisplaySize = 512
+constScrollBarSize = 17
 current_cells = []
 display_living = []
 update_births = []
@@ -43,10 +46,14 @@ class GameOfLifeApplication(ttk.Frame):
 
     def __init__(self, windowparent=None):
         global startingPatternList, selectedPatternName, selectedPatternIndex
+        global constDisplaySize, constScrollBarSize
 
         self.lifeFrame = ttk.Frame.__init__(self, windowparent, padding=(12, 3))
         self.buttonFrame = ttk.Frame(self, relief='ridge', padding=10)
-        self.canvasFrame = ttk.Frame(self, width=520, height=520, relief='ridge', padding=10)
+        self.canvasFrame = ttk.Frame(self,
+                                     width=constDisplaySize + constScrollBarSize + 5,
+                                     height=constDisplaySize + constScrollBarSize + 5,
+                                     relief='ridge', padding=3)
 
         self.master.columnconfigure(0, weight=1)
         self.master.rowconfigure(0, weight=1)
@@ -73,8 +80,8 @@ class GameOfLifeApplication(ttk.Frame):
         self.buttonWrapOnOff = ttk.Checkbutton(frame, text='Wraparound', command=self.wrap, var=self.wrapButtonValue)#, width=16)
         self.buttonQuit = ttk.Button(frame, text='Quit', command=self.end_it)#, width=16)
         self.buttonPause = ttk.Button(frame, text='Pause', state="disabled", command=self.pause)#, width=16)
-        self.buttonZoomIn = ttk.Button(frame, text='Zoom In', state="enabled", command=self.zoomin)#, width=16)
-        self.buttonZoomOut = ttk.Button(frame, text='Zoom Out', state="enabled", command=self.zoomout)#, width=16)
+        self.buttonZoomIn = ttk.Button(frame, text='Zoom In', state="enabled", command=self.zoom_in)#, width=16)
+        self.buttonZoomOut = ttk.Button(frame, text='Zoom Out', state="enabled", command=self.zoom_out)#, width=16)
 
     def create_labels(self, frame):
         self.infoLabel = ttk.Label(frame, textvariable=self.infoText, anchor='w')
@@ -83,15 +90,13 @@ class GameOfLifeApplication(ttk.Frame):
         global cellSizeGrid
 
         self.cellcanvas = tk.Canvas(frame,
-                                    width=512, height=512,
-                                    scrollregion=(0, 0, constGridSize * cellSizeGrid, constGridSize * cellSizeGrid),
+                                    width=constDisplaySize, height=constDisplaySize,
+                                    # scrollregion=(0, 0, constGridSize * cellSizeGrid, constGridSize * cellSizeGrid),
+                                    scrollregion=(0, 0, constDisplaySize*2, constDisplaySize*2),
                                     background='black')
 
         self.cellcanvashorizontalbar = tk.Scrollbar(self.cellcanvas, orient=tk.HORIZONTAL, command=self.cellcanvas.xview)
         self.cellcanvasverticalbar = tk.Scrollbar(self.cellcanvas, orient=tk.VERTICAL, command=self.cellcanvas.yview)
-
-        self.cellcanvashorizontalbar.pack(side=tk.BOTTOM, fill=tk.X)
-        self.cellcanvasverticalbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         self.cellcanvas.configure(xscrollcommand=self.cellcanvashorizontalbar.set, yscrollcommand=self.cellcanvasverticalbar.set)
 
@@ -105,6 +110,8 @@ class GameOfLifeApplication(ttk.Frame):
         self.wrapButtonValue.set(1)
 
     def add_widgets(self):
+        global constDisplaySize, constScrollBarSize
+
         # Add everything to the frame
         self.infoLabel.grid(column=1, row=1, columnspan=7)
 
@@ -116,11 +123,13 @@ class GameOfLifeApplication(ttk.Frame):
         self.buttonZoomIn.grid(column=6, row=2)
         self.buttonZoomOut.grid(column=7, row=2)
 
-        self.cellcanvas.grid(column=1, row=1, sticky='nw')
-
         self.grid(column=0, row=0, sticky='nw')
         self.buttonFrame.grid(column=1, row=1, sticky='nw')
         self.canvasFrame.grid(column=1, row=2, sticky='nwse')
+
+        self.cellcanvas.place(x=0,y=0, width=constDisplaySize + constScrollBarSize, height=constDisplaySize + constScrollBarSize)
+        self.cellcanvashorizontalbar.place(x=0, y=constDisplaySize, width=constDisplaySize)
+        self.cellcanvasverticalbar.place(x=constDisplaySize, y=0, height=constDisplaySize)
 
         for c in range(1, self.grid_size()[0]+1):
             self.columnconfigure(c, weight=1)
@@ -148,21 +157,32 @@ class GameOfLifeApplication(ttk.Frame):
 
     def display_grid(self):
         global display_living
+        global cellSizeGrid, constCellSizeGridMaximum
+
+        cellDisplaySizeBeforeScale = constCellSizeGridMaximum * 2
 
         # Display the current grid here
         self.cellcanvas.delete(tk.ALL)
 
-        # for row in next_recompute_area:
-        #     pos_row = row[0] * cellSizeGrid
-        #     for column in row[1]:
-        #         pos_column = column * cellSizeGrid
-        #         self.cellcanvas.create_rectangle(pos_column, pos_row, pos_column + cellSizeGrid, pos_row + cellSizeGrid, fill='#773333', tag='cell')
+        for row in next_recompute_area:
+            pos_row = row[0] * cellDisplaySizeBeforeScale
+            for column in row[1]:
+                pos_column = column * cellDisplaySizeBeforeScale
+                self.cellcanvas.create_rectangle(pos_column, pos_row,
+                                                 pos_column + cellDisplaySizeBeforeScale,
+                                                 pos_row + cellDisplaySizeBeforeScale,
+                                                 fill='#773333', tag='cell')
 
         for row in display_living:
-            pos_row = row[0] * cellSizeGrid
+            pos_row = row[0] * cellDisplaySizeBeforeScale
             for column in row[1]:
-                pos_column = column * cellSizeGrid
-                self.cellcanvas.create_rectangle(pos_column, pos_row, pos_column + cellSizeGrid, pos_row + cellSizeGrid, fill='#7777FF', tag='cell')
+                pos_column = column * cellDisplaySizeBeforeScale
+                self.cellcanvas.create_rectangle(pos_column, pos_row,
+                                                 pos_column + cellDisplaySizeBeforeScale,
+                                                 pos_row + cellDisplaySizeBeforeScale,
+                                                 fill='#CCCCFF', tag='cell')
+
+        self.cellcanvas.scale('cell', 0, 0, 1/cellSizeGrid, 1/cellSizeGrid)
 
     def end_it(self):
         try:
@@ -243,17 +263,27 @@ class GameOfLifeApplication(ttk.Frame):
         else:
             wrapAroundFlag = False
 
-    def zoomin(self):
-        global cellSizeGrid
+    def zoom_out(self):
+        global cellSizeGrid, constCellSizeGridMaximum
 
-        if cellSizeGrid < 10:
+        if cellSizeGrid < constCellSizeGridMaximum:
             cellSizeGrid *= 2
+            self.buttonZoomIn.configure(state="normal")
+            if not running:
+                self.redraw()
+        if cellSizeGrid >= constCellSizeGridMaximum:
+            self.buttonZoomOut.configure(state="disabled")
 
-    def zoomout(self):
+    def zoom_in(self):
         global cellSizeGrid
 
-        if cellSizeGrid > 2:
+        if cellSizeGrid > 1:
             cellSizeGrid /= 2
+            self.buttonZoomOut.configure(state="normal")
+            if not running:
+                self.redraw()
+        if cellSizeGrid <= 1:
+            self.buttonZoomIn.configure(state="disabled")
 
 
 def setup_grid():
