@@ -91,8 +91,8 @@ class GameOfLifeApplication(ttk.Frame):
 
         self.cellcanvas = tk.Canvas(frame,
                                     width=constDisplaySize, height=constDisplaySize,
-                                    # scrollregion=(0, 0, constGridSize * cellSizeGrid, constGridSize * cellSizeGrid),
-                                    scrollregion=(0, 0, constDisplaySize*2, constDisplaySize*2),
+                                    scrollregion=(0, 0, constDisplaySize * constCellSizeGridMaximum/cellSizeGrid, constDisplaySize * constCellSizeGridMaximum/cellSizeGrid),
+                                    # scrollregion=(0, 0, constDisplaySize*2, constDisplaySize*2),
                                     background='black')
 
         self.cellcanvashorizontalbar = tk.Scrollbar(self.cellcanvas, orient=tk.HORIZONTAL, command=self.cellcanvas.xview)
@@ -127,7 +127,7 @@ class GameOfLifeApplication(ttk.Frame):
         self.buttonFrame.grid(column=1, row=1, sticky='nw')
         self.canvasFrame.grid(column=1, row=2, sticky='nwse')
 
-        self.cellcanvas.place(x=0,y=0, width=constDisplaySize + constScrollBarSize, height=constDisplaySize + constScrollBarSize)
+        self.cellcanvas.place(x=0,y=0, width=constDisplaySize + constScrollBarSize+1, height=constDisplaySize + constScrollBarSize+1)
         self.cellcanvashorizontalbar.place(x=0, y=constDisplaySize, width=constDisplaySize)
         self.cellcanvasverticalbar.place(x=constDisplaySize, y=0, height=constDisplaySize)
 
@@ -164,14 +164,14 @@ class GameOfLifeApplication(ttk.Frame):
         # Display the current grid here
         self.cellcanvas.delete(tk.ALL)
 
-        for row in next_recompute_area:
-            pos_row = row[0] * cellDisplaySizeBeforeScale
-            for column in row[1]:
-                pos_column = column * cellDisplaySizeBeforeScale
-                self.cellcanvas.create_rectangle(pos_column, pos_row,
-                                                 pos_column + cellDisplaySizeBeforeScale,
-                                                 pos_row + cellDisplaySizeBeforeScale,
-                                                 fill='#773333', tag='cell')
+        # for row in next_recompute_area:
+        #     pos_row = row[0] * cellDisplaySizeBeforeScale
+        #     for column in row[1]:
+        #         pos_column = column * cellDisplaySizeBeforeScale
+        #         self.cellcanvas.create_rectangle(pos_column, pos_row,
+        #                                          pos_column + cellDisplaySizeBeforeScale,
+        #                                          pos_row + cellDisplaySizeBeforeScale,
+        #                                          fill='#773333', tag='cell')
 
         for row in display_living:
             pos_row = row[0] * cellDisplaySizeBeforeScale
@@ -269,6 +269,7 @@ class GameOfLifeApplication(ttk.Frame):
         if cellSizeGrid < constCellSizeGridMaximum:
             cellSizeGrid *= 2
             self.buttonZoomIn.configure(state="normal")
+            self.cellcanvas['scrollregion']=(0, 0, constDisplaySize * constCellSizeGridMaximum/cellSizeGrid, constDisplaySize * constCellSizeGridMaximum/cellSizeGrid)
             if not running:
                 self.redraw()
         if cellSizeGrid >= constCellSizeGridMaximum:
@@ -280,6 +281,7 @@ class GameOfLifeApplication(ttk.Frame):
         if cellSizeGrid > 1:
             cellSizeGrid /= 2
             self.buttonZoomOut.configure(state="normal")
+            self.cellcanvas['scrollregion']=(0, 0, constDisplaySize * constCellSizeGridMaximum/cellSizeGrid, constDisplaySize * constCellSizeGridMaximum/cellSizeGrid)
             if not running:
                 self.redraw()
         if cellSizeGrid <= 1:
@@ -581,9 +583,9 @@ def update():
 def adjusted_position(pos):
     new_pos = pos
     if pos < 0:
-        new_pos = constGridSize - 1
+        new_pos = pos + constGridSize
     elif pos >= constGridSize:
-        new_pos = 0
+        new_pos = pos - constGridSize
     return new_pos
 
 
