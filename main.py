@@ -31,7 +31,7 @@ constGridSize = 256
 constCellSizeGridMaximum = 8
 cellSizeGrid = constCellSizeGridMaximum
 constDisplaySize = 512
-constScrollBarSize = 17
+constScrollBarSize = 20
 current_cells = []
 display_living = []
 update_births = []
@@ -51,8 +51,8 @@ class GameOfLifeApplication(ttk.Frame):
         self.lifeFrame = ttk.Frame.__init__(self, windowparent, padding=(12, 3))
         self.buttonFrame = ttk.Frame(self, relief='ridge', padding=10)
         self.canvasFrame = ttk.Frame(self,
-                                     width=constDisplaySize + constScrollBarSize + 5,
-                                     height=constDisplaySize + constScrollBarSize + 5,
+                                     width=constDisplaySize + constScrollBarSize,
+                                     height=constDisplaySize + constScrollBarSize,
                                      relief='ridge', padding=3)
 
         self.master.columnconfigure(0, weight=1)
@@ -92,7 +92,6 @@ class GameOfLifeApplication(ttk.Frame):
         self.cellcanvas = tk.Canvas(frame,
                                     width=constDisplaySize, height=constDisplaySize,
                                     scrollregion=(0, 0, constDisplaySize * constCellSizeGridMaximum/cellSizeGrid, constDisplaySize * constCellSizeGridMaximum/cellSizeGrid),
-                                    # scrollregion=(0, 0, constDisplaySize*2, constDisplaySize*2),
                                     background='black')
 
         self.cellcanvashorizontalbar = tk.Scrollbar(self.cellcanvas, orient=tk.HORIZONTAL, command=self.cellcanvas.xview)
@@ -127,9 +126,9 @@ class GameOfLifeApplication(ttk.Frame):
         self.buttonFrame.grid(column=1, row=1, sticky='nw')
         self.canvasFrame.grid(column=1, row=2, sticky='nwse')
 
-        self.cellcanvas.place(x=0,y=0, width=constDisplaySize + constScrollBarSize+1, height=constDisplaySize + constScrollBarSize+1)
+        self.cellcanvas.place(x=0,y=0, width=constDisplaySize + constScrollBarSize, height=constDisplaySize + constScrollBarSize)
         self.cellcanvashorizontalbar.place(x=0, y=constDisplaySize, width=constDisplaySize)
-        self.cellcanvasverticalbar.place(x=constDisplaySize, y=0, height=constDisplaySize)
+        self.cellcanvasverticalbar.place(x=constDisplaySize+1, y=0, height=constDisplaySize+1)
 
         for c in range(1, self.grid_size()[0]+1):
             self.columnconfigure(c, weight=1)
@@ -153,7 +152,7 @@ class GameOfLifeApplication(ttk.Frame):
     def update_labels(self):
         global livingCells, recomputeCount
 
-        self.infoText.set(f"Generation={generationNumber:>5}, Living cells={livingCells:>5}, Recomputes={recomputeCount:>5}")
+        self.infoText.set(f"Generation={generationNumber:>5}, Living cells={livingCells:>5}, Recomputes={recomputeCount:>5}, C/R={livingCells/recomputeCount:.2f}")
 
     def display_grid(self):
         global display_living
@@ -270,7 +269,7 @@ class GameOfLifeApplication(ttk.Frame):
             cellSizeGrid *= 2
             self.buttonZoomIn.configure(state="normal")
             self.cellcanvas['scrollregion']=(0, 0, constDisplaySize * constCellSizeGridMaximum/cellSizeGrid, constDisplaySize * constCellSizeGridMaximum/cellSizeGrid)
-            if not running:
+            if not running or paused:
                 self.redraw()
         if cellSizeGrid >= constCellSizeGridMaximum:
             self.buttonZoomOut.configure(state="disabled")
@@ -282,10 +281,18 @@ class GameOfLifeApplication(ttk.Frame):
             cellSizeGrid /= 2
             self.buttonZoomOut.configure(state="normal")
             self.cellcanvas['scrollregion']=(0, 0, constDisplaySize * constCellSizeGridMaximum/cellSizeGrid, constDisplaySize * constCellSizeGridMaximum/cellSizeGrid)
-            if not running:
+            if not running or paused:
                 self.redraw()
         if cellSizeGrid <= 1:
             self.buttonZoomIn.configure(state="disabled")
+
+    def display_scroll_value(self, text):
+        sc = self.cellcanvasverticalbar.get()
+        h = sc[1]
+        l = sc[0]
+        d = h - l
+        m = (h + l) / 2
+        print(f"{text} - mid: {m:.3f}, diff: {d:.3f}, csg: {cellSizeGrid}", sc)
 
 
 def setup_grid():
