@@ -30,8 +30,8 @@ constTimerInterval = 10
 constGridSize = 256
 constCellSizeGridMaximum = 8
 cellSizeGrid = constCellSizeGridMaximum
-constDisplaySize = 512
-constScrollBarSize = 20
+constDisplaySize = 768
+constScrollBarSize = 20 # This might be the wrong way to do the scrollbar
 current_cells = []
 display_living = []
 update_births = []
@@ -158,7 +158,7 @@ class GameOfLifeApplication(ttk.Frame):
         global display_living
         global cellSizeGrid, constCellSizeGridMaximum
 
-        cellDisplaySizeBeforeScale = constCellSizeGridMaximum * 2
+        cellDisplaySizeBeforeScale = constCellSizeGridMaximum * 3
 
         # Display the current grid here
         self.cellcanvas.delete(tk.ALL)
@@ -518,7 +518,7 @@ def update():
                         count = current_cells[column_p1][row] + \
                                 current_cells[column][row_p1] + \
                                 current_cells[column_p1][row_p1]
-                    elif row >= constGridSize - 1:
+                    elif row > constGridSize:
                         count = current_cells[column][row_m1] + \
                                 current_cells[column_p1][row_m1] + \
                                 current_cells[column_p1][row]
@@ -528,12 +528,12 @@ def update():
                                 current_cells[column_p1][row] + \
                                 current_cells[column][row_p1] + \
                                 current_cells[column_p1][row_p1]
-                elif column >= constGridSize - 1:
+                elif column > constGridSize:
                     if row == 0:
                         count = current_cells[column_m1][row] + \
                                 current_cells[column][row_p1] + \
                                 current_cells[column_m1][row_p1]
-                    elif row >= constGridSize - 1:
+                    elif row > constGridSize:
                         count = current_cells[column][row_m1] + \
                                 current_cells[column_m1][row_m1] + \
                                 current_cells[column_m1][row]
@@ -550,7 +550,7 @@ def update():
                                 current_cells[column_m1][row_p1] + \
                                 current_cells[column][row_p1] + \
                                 current_cells[column_p1][row_p1]
-                    elif row >= constGridSize - 1:
+                    elif row > constGridSize:
                         count = current_cells[column_m1][row_m1] + \
                                 current_cells[column][row_m1] + \
                                 current_cells[column_p1][row_m1] + \
